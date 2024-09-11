@@ -1,4 +1,4 @@
-# intelligent_agents
+# Intelligent Agents
 
 ## Commits by Martin
 
