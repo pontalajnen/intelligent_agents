@@ -1,5 +1,6 @@
 package template;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import logist.simulation.Vehicle;
@@ -22,6 +23,12 @@ public class ReactiveTemplate implements ReactiveBehavior {
 	private int numActions;
 	private Agent myAgent;
 
+	private double[] V;
+	private double[][][] Q;
+	private Vehicle v;
+	private double[] best_value;
+	private City[] best_neighbor;
+
 
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
@@ -39,15 +46,15 @@ public class ReactiveTemplate implements ReactiveBehavior {
 
 		// Computing Q-algorithm
 
-		double[] V = new double[topology.cities().size()]; // best possible value for being in each city
-		double[][][] Q = new double [topology.cities().size()][topology.cities().size()][2]; //Q[city_a][city_b][action]
-		Vehicle v = agent.vehicles().get(0);
+		V = new double[topology.cities().size()]; // best possible value for being in each city
+		Q = new double [topology.cities().size()][topology.cities().size()][2]; //Q[city_a][city_b][action]
+		v = agent.vehicles().get(0);
 
 		// for convergence of Q-algorithm
-		double diff = 1e10;
+		double diff = 0;
 		double epsilon = 1e-5;
 
-		while (diff > epsilon){ // continue until convergence
+		do { // continue until convergence
 			// compute Q-table each city pair city_1, city_2, two options
 			// reject [0] or accept [1] a task given the source and destination city
 
@@ -72,30 +79,49 @@ public class ReactiveTemplate implements ReactiveBehavior {
 					}
 					// update q-values for accepting task
 					if (td.weight(city1, city2) <= v.capacity() && city1.id != city2.id){
+						var oldQ = Q[city1.id][city2.id][1];
 
+						Q[city1.id][city2.id][1] = td.reward(city1, city2) - city1.distanceTo(city2) * v.costPerKm() +
+								discount * td.probability(city1, city2) * V[city2.id];
 
-						}
+						V[city1.id] = Math.max(V[city1.id], Q[city1.id][city2.id][1]);
+
+						diff = Math.max(diff, Math.abs(Q[city1.id][city2.id][1] - oldQ));
 					}
 
 				}
 
 			}
+		} while (diff > epsilon);
+
+		for (City city1 : topology.cities()){
+			double best_qval = -1e10;
+			City best_city = city1;
+
+			for(City city2 : city1.neighbors()){
+				if (best_qval < Q[city1.id][city2.id][0]){
+					best_qval = Q[city1.id][city2.id][0];
+					best_city = city2;
+				}
+			}
+
+			best_value[city1.id] = best_qval;
+			best_neighbor[city1.id] = best_city;
 		}
-
-
-
-
 	}
 
 	@Override
 	public Action act(Vehicle vehicle, Task availableTask) {
-		Action action;
+		Action action = null;
 
-		if (availableTask == null || random.nextDouble() > pPickup) {
-			City currentCity = vehicle.getCurrentCity();
-			action = new Move(currentCity.randomNeighbor(random));
-		} else {
-			action = new Pickup(availableTask);
+		action = new Move(best_neighbor[vehicle.getCurrentCity().id]);
+
+		if (availableTask != null && availableTask.weight <= vehicle.capacity()) {
+			double pickup_value = Q[vehicle.getCurrentCity().id][availableTask.deliveryCity.id][1];
+
+			if (pickup_value > best_value[vehicle.getCurrentCity().id]) {
+				action = new Pickup(availableTask);
+			}
 		}
 
 		if (numActions >= 1) {
