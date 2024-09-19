@@ -15,8 +15,6 @@ import logist.topology.Topology.City;
 
 public class ReactiveTemplate implements ReactiveBehavior {
 
-	private static double EPSILON = 1e-5; // convergence checking in Q-learning
-
 	private Random random;
 	private double pPickup;
 	private int numActions;
@@ -45,43 +43,47 @@ public class ReactiveTemplate implements ReactiveBehavior {
 
 		// Computing Q-algorithm
 
-		V = new double[topology.cities().size()]; // best possible value for being in each city
+		V = new double[topology.cities().size()]; // Best possible value for being in each city
 		Q = new double [topology.cities().size()][topology.cities().size()][2]; //Q[city_a][city_b][action]
 		v = agent.vehicles().get(0);
 
-		// for convergence of Q-algorithm
+		// For convergence of Q-algorithm
 		double diff = 0;
 		double epsilon = 1e-5;
 
-		do { // continue until convergence
-			// compute Q-table each city pair city_1, city_2, two options
-			// reject [0] or accept [1] a task given the source and destination city
+		do { // Continue until convergence
+			// Compute Q-table each city pair city_1, city_2, two options
+			// Reject [0] or accept [1] a task given the source and destination city
 
 			for(City city1 : topology.cities()){
 				for(City city2 : topology.cities()){
 
-					// update q-values for refusing a task
+					// Update q-values for refusing a task
 					if (city1.hasNeighbor(city2)) {
 
 						var oldQ = Q[city1.id][city2.id][0];
 
 						// Q-value based on cost and future reward
-						Q[city1.id][city2.id][0] = -city1.distanceTo(city2) * v.costPerKm() +
-								discount * (1 - td.probability(city1, city2)) * V[city2.id];
+						double reward = -city1.distanceTo(city2) * v.costPerKm();
+						double transition = 1 - td.probability(city1, city2);
+						double value = V[city2.id];
+						Q[city1.id][city2.id][0] =  reward + discount * transition * value;
 
-						// update value function,
+						// Update value function
 						V[city1.id] = Math.max(V[city1.id], Q[city1.id][city2.id][0]);
 
-						// update diff for convergence check
+						// Update diff for convergence check
 						diff = Math.max(diff, Math.abs(Q[city1.id][city2.id][0] - oldQ));
-
 					}
-					// update q-values for accepting task
+					// Update q-values for accepting task
 					if (td.weight(city1, city2) <= v.capacity() && city1.id != city2.id){
 						var oldQ = Q[city1.id][city2.id][1];
 
-						Q[city1.id][city2.id][1] = td.reward(city1, city2) - city1.distanceTo(city2) * v.costPerKm() +
-								discount * td.probability(city1, city2) * V[city2.id];
+						double reward = td.reward(city1, city2) - city1.distanceTo(city2) * v.costPerKm();
+						double transition = td.probability(city1, city2);
+						double value = V[city2.id];
+
+						Q[city1.id][city2.id][1] =  reward + discount * transition * value;
 
 						V[city1.id] = Math.max(V[city1.id], Q[city1.id][city2.id][1]);
 
