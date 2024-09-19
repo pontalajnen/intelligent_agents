@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="lib2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/lib/colt.jar!/" />
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/lib/log4j-1.2.15.jar!/" />
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/lib/jsolver.jar!/" />
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/lib/plot.jar!/" />
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/lib/commons-math-1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/lib/jdom.jar!/" />
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/lib/repast.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

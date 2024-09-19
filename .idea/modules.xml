@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/intelligent_agents_group.iml" filepath="$PROJECT_DIR$/.idea/intelligent_agents_group.iml" />
+      <module fileurl="file://$PROJECT_DIR$/labs/intro_setup/intro_setup.iml" filepath="$PROJECT_DIR$/labs/intro_setup/intro_setup.iml" />
+      <module fileurl="file://$PROJECT_DIR$/labs/lab1/lab1.iml" filepath="$PROJECT_DIR$/labs/lab1/lab1.iml" />
+    </modules>
+  </component>
+</project>
