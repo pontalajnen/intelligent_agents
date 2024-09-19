@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<history configuration="config/reactive.xml">
+	<agents>
+		<agent name="reactive-random">
+			<vehicle name="Vehicle 1"/>
+		</agent>
+	</agents>
+	<rounds>
+		<round id="1">
+			<tasks>
+				<task id="0" pickup="Marseille" delivery="Bordeaux" weight="3" reward="66042"/>
+				<task id="1" pickup="Genève" delivery="Strasbourg" weight="3" reward="83601"/>
+				<task id="2" pickup="Le Havre" delivery="Brest" weight="3" reward="56409"/>
+				<task id="3" pickup="Paris" delivery="Lyon" weight="3" reward="78340"/>
+				<task id="4" pickup="Marseille" delivery="Bordeaux" weight="3" reward="66042"/>
+				<task id="5" pickup="Le Havre" delivery="Monaco" weight="3" reward="27987"/>
+				<task id="6" pickup="Marseille" delivery="Bordeaux" weight="3" reward="66042"/>
+				<task id="7" pickup="Strasbourg" delivery="Monaco" weight="3" reward="48005"/>
+				<task id="8" pickup="Paris" delivery="Le Havre" weight="3" reward="96787"/>
+				<task id="9" pickup="Bordeaux" delivery="Lyon" weight="3" reward="70005"/>
+			</tasks>
+			<events>
+				<event id="0" time="0" vehicle="Vehicle 1" move="Bordeaux"/>
+				<event id="1" time="2654545297" vehicle="Vehicle 1" move="Marseille"/>
+				<event id="2" time="5590908759" vehicle="Vehicle 1" move="Bordeaux"/>
+				<event id="3" time="8527272222" vehicle="Vehicle 1" pickup="0"/>
+				<event id="4" time="8827272204" vehicle="Vehicle 1" move="Paris"/>
+				<event id="5" time="11481817516" vehicle="Vehicle 1" move="Brest"/>
+				<event id="6" time="14168180986" vehicle="Vehicle 1" deliver="0"/>
+				<event id="7" time="14468180966" vehicle="Vehicle 1" move="Paris"/>
+				<event id="8" time="17154544443" vehicle="Vehicle 1" pickup="0"/>
+				<event id="9" time="17454544427" vehicle="Vehicle 1" move="Lyon"/>
+				<event id="10" time="19572726113" vehicle="Vehicle 1" move="Marseille"/>
+				<event id="11" time="21009089658" vehicle="Vehicle 1" deliver="0"/>
+				<event id="12" time="21309089640" vehicle="Vehicle 1" pickup="0"/>
+				<event id="13" time="21609089623" vehicle="Vehicle 1" move="Lyon"/>
+				<event id="14" time="23045453174" vehicle="Vehicle 1" move="Paris"/>
+			</events>
+		</round>
+	</rounds>
+	<statistics>
+		<stat rank="1" agent="reactive-random">
+			<total-tasks value="1"/>
+			<total-distance value="5206.0"/>
+			<total-cost value="26030"/>
+			<total-reward value="86650"/>
+			<total-profit value="60620"/>
+		</stat>
+	</statistics>
+</history>

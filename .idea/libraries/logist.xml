@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="logist">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/labs/intro_setup/reactive/logist/logist.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
