@@ -60,7 +60,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			plan = naivePlan(vehicle, tasks);
 			break;
 		case BFS:
-			var visited = new HashMap<State, Double>();
+			var visited = new HashMap<Integer, Double>();
 
 			Queue<State> queue = new LinkedList<>();
 
@@ -78,21 +78,20 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 
 			State terminalState = null;
 
-			while(!queue.isEmpty() && terminalState == null){
+			while(!queue.isEmpty()){
 
 				var currentState = queue.poll();
-				System.out.println(queue.size());
 
-				if(visited.containsKey(currentState)){
-					if (currentState.getTotalCost() < visited.get(currentState)){
-						visited.put(currentState, currentState.getTotalCost());
+				if(visited.containsKey(currentState.hashCode())){
+					if (visited.get(currentState.hashCode()) > currentState.getTotalCost()){
+						visited.put(currentState.hashCode(), currentState.getTotalCost());
 					}
 					else{
 						continue;
 					}
 				}
 				else{
-					visited.put(currentState, currentState.getTotalCost());
+					visited.put(currentState.hashCode(), currentState.getTotalCost());
 				}
 
 				if (terminalState != null && currentState.getTotalCost() > terminalState.getTotalCost()){
@@ -156,9 +155,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 									TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
 									currentState.getDeliveredTasks(),
 									newerPlan);
-							if (!visited.containsKey(newestState) || visited.get(newestState) > newestState.getTotalCost()){
-								queue.add(newestState);
-							}
+							queue.add(newestState);
 						}
 					}
 				}
