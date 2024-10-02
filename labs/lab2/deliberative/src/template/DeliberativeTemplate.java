@@ -76,13 +76,14 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 
 			State terminalState = null;
 
-			while(!queue.isEmpty()){
+			while(!queue.isEmpty() || terminalState != null){
 
 				var currentState = queue.poll();
+
 				if (terminalState != null && currentState.getTotalCost() > terminalState.getTotalCost()){
 					continue;
 				}
-				if(currentState.getRemainingTasks().isEmpty()){
+				if(currentState.getRemainingTasks().isEmpty() && currentState.getCarryingTasks().isEmpty()){
 					if(terminalState == null || terminalState.getTotalCost() > currentState.getTotalCost()){
 						terminalState = currentState;
 					}
@@ -95,8 +96,10 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				for(var task:currentState.getCarryingTasks()){
 					if (task.deliveryCity != currentState.getLocation()){
 						deliverableTasks.remove(task);
-						currentPlan.add(new Action.Delivery(task));
 					}
+				}
+				for (var task:deliverableTasks){
+					currentPlan.add(new Action.Delivery(task));
 				}
 				currentState.setCarryingTasks(TaskSet.intersectComplement(currentState.getCarryingTasks(), deliverableTasks));
 				currentState.setDeliveredTasks(TaskSet.union(currentState.getDeliveredTasks(), deliverableTasks));
