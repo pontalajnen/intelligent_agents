@@ -7,6 +7,7 @@ import logist.topology.Topology;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 public class State {
     private State parentState;
@@ -27,6 +28,35 @@ public class State {
         this.actions = actions;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, carryingTasks, remainingTasks, deliveredTasks);
+    }
+
+    @Override
+    public boolean equals(Object obj){
+        if(this == obj){
+            return true;
+        }
+        if(obj == null){
+            return false;
+        }
+        State other = (State)obj;
+
+        if (this.location != other.location) {
+            return false;
+        }
+        if (this.carryingTasks != other.carryingTasks) {
+            return false;
+        }
+        if (this.remainingTasks != other.remainingTasks) {
+            return false;
+        }
+        if (this.deliveredTasks != other.deliveredTasks) {
+            return false;
+        }
+        return true;
+    }
     public List<Action> getActions() {
         return actions;
     }

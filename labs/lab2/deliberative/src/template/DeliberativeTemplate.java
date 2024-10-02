@@ -60,6 +60,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			plan = naivePlan(vehicle, tasks);
 			break;
 		case BFS:
+			var visited = new HashMap<State, Double>();
+
 			Queue<State> queue = new LinkedList<>();
 
 			var initialState = new State(
@@ -76,9 +78,22 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 
 			State terminalState = null;
 
-			while(!queue.isEmpty() || terminalState != null){
+			while(!queue.isEmpty() && terminalState == null){
 
 				var currentState = queue.poll();
+				System.out.println(queue.size());
+
+				if(visited.containsKey(currentState)){
+					if (currentState.getTotalCost() < visited.get(currentState)){
+						visited.put(currentState, currentState.getTotalCost());
+					}
+					else{
+						continue;
+					}
+				}
+				else{
+					visited.put(currentState, currentState.getTotalCost());
+				}
 
 				if (terminalState != null && currentState.getTotalCost() > terminalState.getTotalCost()){
 					continue;
@@ -129,18 +144,21 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 						}
 						j++;
 					}
-					if (potentialPickup.weightSum() < vehicle.capacity() - currentState.getCarryingTasks().weightSum()){
+					if (potentialPickup.weightSum() <= vehicle.capacity() - currentState.getCarryingTasks().weightSum()){
 						for (var neighbor: currentState.getLocation().neighbors()){
 							var newerPlan = new ArrayList<>(newPlan);
 							newerPlan.add(new Action.Move(neighbor));
-							queue.add(new State(
+							var newestState = new State(
 									currentState,
 									neighbor,
 									currentState.getTotalCost() + currentState.getLocation().distanceUnitsTo(neighbor) * vehicle.costPerKm(),
 									TaskSet.union(currentState.getCarryingTasks(), potentialPickup),
 									TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
 									currentState.getDeliveredTasks(),
-									newerPlan));
+									newerPlan);
+							if (!visited.containsKey(newestState) || visited.get(newestState) > newestState.getTotalCost()){
+								queue.add(newestState);
+							}
 						}
 					}
 				}
