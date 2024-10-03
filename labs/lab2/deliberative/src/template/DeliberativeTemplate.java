@@ -30,6 +30,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	/* the properties of the agent */
 	Agent agent;
 	int capacity;
+	TaskSet carriedTasks;
 
 	/* the planning class */
 	Algorithm algorithm;
@@ -86,7 +87,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				TaskSet.copyOf(tasks),
 				TaskSet.noneOf(tasks),
 				new ArrayList<>(),
-				0
+				0,
+				vehicle.costPerKm()
 		);
 
 		queue.add(initialState);
@@ -144,7 +146,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			var permutationCounter = Math.pow(2, cityTasks.size());
 
 			for(var i = 0; i < permutationCounter; i++){
-				var newPlan = new ArrayList<Action>(currentPlan);
+				var newPlan = new ArrayList<>(currentPlan);
 				var permutation = Integer.toBinaryString(i);
 				while (permutation.length() < cityTasks.size()){
 					permutation = "0" + permutation;
@@ -171,7 +173,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 								TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
 								currentState.getDeliveredTasks(),
 								newerPlan,
-								currentState.getTotalSteps() + 1);
+								currentState.getTotalSteps() + 1,
+								vehicle.costPerKm());
 						queue.add(newestState);
 					}
 				}
@@ -185,9 +188,10 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		System.out.println("Plan Competed!");
 		System.out.println(plan);
 		System.out.println(String.format("%s%d", "Number of iterations: ", numberOfIterations));
+		System.out.println(String.format("%s%f", "Minimum cost: ", terminalState.getTotalCost()));
 		return plan;
 	}
-	
+
 	private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
 		Plan plan;
 		int numberOfIterations = 0;
@@ -204,7 +208,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				TaskSet.copyOf(tasks),
 				TaskSet.noneOf(tasks),
 				new ArrayList<>(),
-				0
+				0,
+				vehicle.costPerKm()
 		);
 
 		queue.add(initialState);
@@ -216,12 +221,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			var currentState = queue.poll();
 
 			if(visited.containsKey(currentState.hashCode())){
-				if (visited.get(currentState.hashCode()) > currentState.getTotalCost()){
-					visited.put(currentState.hashCode(), currentState.getTotalCost());
-				}
-				else{
-					continue;
-				}
+				continue;
 			}
 			else{
 				visited.put(currentState.hashCode(), currentState.getTotalCost());
@@ -256,7 +256,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			var permutationCounter = Math.pow(2, cityTasks.size());
 
 			for(var i = 0; i < permutationCounter; i++){
-				var newPlan = new ArrayList<Action>(currentPlan);
+				var newPlan = new ArrayList<>(currentPlan);
 				var permutation = Integer.toBinaryString(i);
 				while (permutation.length() < cityTasks.size()){
 					permutation = "0" + permutation;
@@ -283,7 +283,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 								TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
 								currentState.getDeliveredTasks(),
 								newerPlan,
-								currentState.getTotalSteps() + 1);
+								currentState.getTotalSteps() + 1,
+								vehicle.costPerKm());
 
 						queue.add(newestState);
 					}
@@ -298,16 +299,16 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		System.out.println("Plan Competed!");
 		System.out.println(plan);
 		System.out.println(String.format("%s%d", "Number of iterations: ", numberOfIterations));
+		System.out.println(String.format("%s%f", "Minimum cost: ", terminalState.getTotalCost()));
+
 		return plan;
 	}
 
 	@Override
 	public void planCancelled(TaskSet carriedTasks) {
-		
+
 		if (!carriedTasks.isEmpty()) {
-			// This cannot happen for this simple agent, but typically
-			// you will need to consider the carriedTasks when the next
-			// plan is computed.
+
 		}
 	}
 }

@@ -18,8 +18,9 @@ public class State {
     private TaskSet deliveredTasks;
     private List<Action> actions;
     private int totalSteps;
+    private int costPerKilometer;
 
-    public State(State parentState, Topology.City location, double totalCost, TaskSet carryingTasks, TaskSet remainingTasks, TaskSet deliveredTasks, List<Action> actions, int totalSteps) {
+    public State(State parentState, Topology.City location, double totalCost, TaskSet carryingTasks, TaskSet remainingTasks, TaskSet deliveredTasks, List<Action> actions, int totalSteps, int costPerKilometer) {
         this.parentState = parentState;
         this.location = location;
         this.totalCost = totalCost;
@@ -28,9 +29,18 @@ public class State {
         this.deliveredTasks = deliveredTasks;
         this.actions = actions;
         this.totalSteps = totalSteps;
+        this.costPerKilometer = costPerKilometer;
 
     }
 
+
+    public int getCostPerKilometer() {
+        return costPerKilometer;
+    }
+
+    public void setCostPerKilometer(int costPerKilometer) {
+        this.costPerKilometer = costPerKilometer;
+    }
     public int getTotalSteps() {
         return totalSteps;
     }
@@ -41,7 +51,13 @@ public class State {
 
     @Override
     public int hashCode() {
-        return Objects.hash(location, carryingTasks, remainingTasks, deliveredTasks);
+        return Objects.hash(
+                totalCost,
+                location,
+                carryingTasks,
+                remainingTasks,
+                deliveredTasks
+        );
     }
 
     public List<Action> getActions() {
