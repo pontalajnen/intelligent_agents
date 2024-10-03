@@ -19,30 +19,30 @@
 			<events>
 				<event id="0" time="0" vehicle="Vehicle 1" pickup="4"/>
 				<event id="1" time="299999986" vehicle="Vehicle 1" move="Sion"/>
-				<event id="2" time="1966666560" vehicle="Vehicle 1" pickup="5"/>
-				<event id="3" time="2266666540" vehicle="Vehicle 1" move="Thun"/>
-				<event id="4" time="3599999797" vehicle="Vehicle 1" move="Bern"/>
-				<event id="5" time="4044444215" vehicle="Vehicle 1" move="Basel"/>
-				<event id="6" time="5599999683" vehicle="Vehicle 1" deliver="5"/>
-				<event id="7" time="5899999667" vehicle="Vehicle 1" pickup="3"/>
-				<event id="8" time="6199999649" vehicle="Vehicle 1" move="Zürich"/>
-				<event id="9" time="7533332904" vehicle="Vehicle 1" move="St-Gallen"/>
-				<event id="10" time="8866666162" vehicle="Vehicle 1" deliver="3"/>
-				<event id="11" time="9166666142" vehicle="Vehicle 1" deliver="4"/>
-				<event id="12" time="9466666126" vehicle="Vehicle 1" move="Zürich"/>
-				<event id="13" time="10799999376" vehicle="Vehicle 1" pickup="1"/>
-				<event id="14" time="11099999359" vehicle="Vehicle 1" move="Aarau"/>
-				<event id="15" time="11766665989" vehicle="Vehicle 1" pickup="0"/>
-				<event id="16" time="12066665973" vehicle="Vehicle 1" move="Bern"/>
-				<event id="17" time="13288888122" vehicle="Vehicle 1" move="Thun"/>
-				<event id="18" time="13733332540" vehicle="Vehicle 1" move="Sion"/>
-				<event id="19" time="15066665792" vehicle="Vehicle 1" deliver="1"/>
+				<event id="2" time="1966666551" vehicle="Vehicle 1" pickup="5"/>
+				<event id="3" time="2266666534" vehicle="Vehicle 1" move="Thun"/>
+				<event id="4" time="3599999786" vehicle="Vehicle 1" move="Bern"/>
+				<event id="5" time="4044444208" vehicle="Vehicle 1" move="Basel"/>
+				<event id="6" time="5599999666" vehicle="Vehicle 1" deliver="5"/>
+				<event id="7" time="5899999649" vehicle="Vehicle 1" pickup="3"/>
+				<event id="8" time="6199999631" vehicle="Vehicle 1" move="Zürich"/>
+				<event id="9" time="7533332889" vehicle="Vehicle 1" move="St-Gallen"/>
+				<event id="10" time="8866666148" vehicle="Vehicle 1" deliver="3"/>
+				<event id="11" time="9166666127" vehicle="Vehicle 1" deliver="4"/>
+				<event id="12" time="9466666112" vehicle="Vehicle 1" move="Zürich"/>
+				<event id="13" time="10799999364" vehicle="Vehicle 1" pickup="1"/>
+				<event id="14" time="11099999349" vehicle="Vehicle 1" move="Aarau"/>
+				<event id="15" time="11766665975" vehicle="Vehicle 1" pickup="0"/>
+				<event id="16" time="12066665957" vehicle="Vehicle 1" move="Bern"/>
+				<event id="17" time="13288888108" vehicle="Vehicle 1" move="Thun"/>
+				<event id="18" time="13733332527" vehicle="Vehicle 1" move="Sion"/>
+				<event id="19" time="15066665794" vehicle="Vehicle 1" deliver="1"/>
 				<event id="20" time="15366665777" vehicle="Vehicle 1" pickup="2"/>
-				<event id="21" time="15666665760" vehicle="Vehicle 1" move="Lausanne"/>
-				<event id="22" time="17333332331" vehicle="Vehicle 1" move="Genève"/>
-				<event id="23" time="18333332273" vehicle="Vehicle 1" deliver="0"/>
-				<event id="24" time="18633332257" vehicle="Vehicle 1" deliver="2"/>
-				<event id="25" time="18933332241" vehicle="Vehicle 1" move="Lausanne"/>
+				<event id="21" time="15666665762" vehicle="Vehicle 1" move="Lausanne"/>
+				<event id="22" time="17333332340" vehicle="Vehicle 1" move="Genève"/>
+				<event id="23" time="18333332286" vehicle="Vehicle 1" deliver="0"/>
+				<event id="24" time="18633332268" vehicle="Vehicle 1" deliver="2"/>
+				<event id="25" time="18933332249" vehicle="Vehicle 1" move="Lausanne"/>
 			</events>
 		</round>
 	</rounds>

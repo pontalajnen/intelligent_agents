@@ -150,7 +150,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 							var newestState = new State(
 									currentState,
 									neighbor,
-									currentState.getTotalCost() + currentState.getLocation().distanceUnitsTo(neighbor) * vehicle.costPerKm(),
+									currentState.getTotalCost() + currentState.getLocation().distanceTo(neighbor) * vehicle.costPerKm(),
 									TaskSet.union(currentState.getCarryingTasks(), potentialPickup),
 									TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
 									currentState.getDeliveredTasks(),
@@ -166,6 +166,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 				plan.append(action);
 			}
 			System.out.println("Plan Competed!");
+			System.out.println(plan);
 			break;
 		default:
 			throw new AssertionError("Should not happen.");
