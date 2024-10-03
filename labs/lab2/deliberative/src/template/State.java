@@ -17,8 +17,9 @@ public class State {
     private TaskSet remainingTasks;
     private TaskSet deliveredTasks;
     private List<Action> actions;
+    private int totalSteps;
 
-    public State(State parentState, Topology.City location, double totalCost, TaskSet carryingTasks, TaskSet remainingTasks, TaskSet deliveredTasks, List<Action> actions) {
+    public State(State parentState, Topology.City location, double totalCost, TaskSet carryingTasks, TaskSet remainingTasks, TaskSet deliveredTasks, List<Action> actions, int totalSteps) {
         this.parentState = parentState;
         this.location = location;
         this.totalCost = totalCost;
@@ -26,6 +27,16 @@ public class State {
         this.remainingTasks = remainingTasks;
         this.deliveredTasks = deliveredTasks;
         this.actions = actions;
+        this.totalSteps = totalSteps;
+
+    }
+
+    public int getTotalSteps() {
+        return totalSteps;
+    }
+
+    public void setTotalSteps(int totalSteps) {
+        this.totalSteps = totalSteps;
     }
 
     @Override

@@ -52,148 +52,252 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
-		Plan plan;
+		Plan plan = null;
 
 		switch (algorithm) {
-		case ASTAR:
-			// ...
-			plan = naivePlan(vehicle, tasks);
-			break;
-		case BFS:
-			var visited = new HashMap<Integer, Double>();
+			case ASTAR:
+				System.out.println("Running ASTAR...");
+				plan = aStarPlan(vehicle, tasks);
+				break;
+			case BFS:
+				System.out.println("Running BFS...");
+				plan = bfsPlan(vehicle, tasks);
+				break;
+			default:
+				System.out.println("Invalid Argument");
+				break;
+		}
+		return plan;
+	}
 
-			Queue<State> queue = new LinkedList<>();
+	private Plan bfsPlan(Vehicle vehicle, TaskSet tasks){
+		Plan plan;
+		int numberOfIterations = 0;
 
-			var initialState = new State(
-					null,
-					vehicle.getCurrentCity(),
-					0,
-					TaskSet.noneOf(tasks),
-					TaskSet.copyOf(tasks),
-					TaskSet.noneOf(tasks),
-					new ArrayList<>()
-			);
+		var visited = new HashMap<Integer, Double>();
 
-			queue.add(initialState);
+		Queue<State> queue = new LinkedList<>();
 
-			State terminalState = null;
+		var initialState = new State(
+				null,
+				vehicle.getCurrentCity(),
+				0,
+				TaskSet.noneOf(tasks),
+				TaskSet.copyOf(tasks),
+				TaskSet.noneOf(tasks),
+				new ArrayList<>(),
+				0
+		);
 
-			while(!queue.isEmpty()){
+		queue.add(initialState);
 
-				var currentState = queue.poll();
+		State terminalState = null;
 
-				if(visited.containsKey(currentState.hashCode())){
-					if (visited.get(currentState.hashCode()) > currentState.getTotalCost()){
-						visited.put(currentState.hashCode(), currentState.getTotalCost());
-					}
-					else{
-						continue;
-					}
-				}
-				else{
+		while(!queue.isEmpty()){
+			numberOfIterations++;
+			var currentState = queue.poll();
+
+			if(visited.containsKey(currentState.hashCode())){
+				if (visited.get(currentState.hashCode()) > currentState.getTotalCost()){
 					visited.put(currentState.hashCode(), currentState.getTotalCost());
 				}
-
-				if (terminalState != null && currentState.getTotalCost() > terminalState.getTotalCost()){
+				else{
 					continue;
 				}
-				if(currentState.getRemainingTasks().isEmpty() && currentState.getCarryingTasks().isEmpty()){
-					if(terminalState == null || terminalState.getTotalCost() > currentState.getTotalCost()){
-						terminalState = currentState;
-					}
-					continue;
+			}
+			else{
+				visited.put(currentState.hashCode(), currentState.getTotalCost());
+			}
+
+			if (terminalState != null && currentState.getTotalCost() > terminalState.getTotalCost()){
+				continue;
+			}
+			TaskSet deliverableTasks = TaskSet.copyOf(currentState.getCarryingTasks());
+
+			List<Action> currentPlan = currentState.getActions();
+
+			for(var task:currentState.getCarryingTasks()){
+				if (task.deliveryCity != currentState.getLocation()){
+					deliverableTasks.remove(task);
 				}
-				TaskSet deliverableTasks = TaskSet.copyOf(currentState.getCarryingTasks());
+			}
+			for (var task:deliverableTasks){
+				currentPlan.add(new Action.Delivery(task));
+			}
+			currentState.setCarryingTasks(TaskSet.intersectComplement(currentState.getCarryingTasks(), deliverableTasks));
+			currentState.setDeliveredTasks(TaskSet.union(currentState.getDeliveredTasks(), deliverableTasks));
 
-				List<Action> currentPlan = currentState.getActions();
-
-				for(var task:currentState.getCarryingTasks()){
-					if (task.deliveryCity != currentState.getLocation()){
-						deliverableTasks.remove(task);
-					}
+			if(currentState.getRemainingTasks().isEmpty() && currentState.getCarryingTasks().isEmpty()){
+				if(terminalState == null || terminalState.getTotalCost() > currentState.getTotalCost()){
+					terminalState = currentState;
 				}
-				for (var task:deliverableTasks){
-					currentPlan.add(new Action.Delivery(task));
+				continue;
+			}
+
+			TaskSet cityTasks = TaskSet.noneOf(currentState.getRemainingTasks());
+
+			for(var task:currentState.getRemainingTasks()){
+				if (task.pickupCity == currentState.getLocation()){
+					cityTasks.add(task);
 				}
-				currentState.setCarryingTasks(TaskSet.intersectComplement(currentState.getCarryingTasks(), deliverableTasks));
-				currentState.setDeliveredTasks(TaskSet.union(currentState.getDeliveredTasks(), deliverableTasks));
+			}
+			var permutationCounter = Math.pow(2, cityTasks.size());
 
-				TaskSet cityTasks = TaskSet.noneOf(currentState.getRemainingTasks());
-
-				for(var task:currentState.getRemainingTasks()){
-					if (task.pickupCity == currentState.getLocation()){
-						cityTasks.add(task);
-					}
+			for(var i = 0; i < permutationCounter; i++){
+				var newPlan = new ArrayList<Action>(currentPlan);
+				var permutation = Integer.toBinaryString(i);
+				while (permutation.length() < cityTasks.size()){
+					permutation = "0" + permutation;
 				}
-				var permutationCounter = Math.pow(2, cityTasks.size());
 
-				for(var i = 0; i < permutationCounter; i++){
-					var newPlan = new ArrayList<Action>(currentPlan);
-					var permutation = Integer.toBinaryString(i);
-					while (permutation.length() < cityTasks.size()){
-						permutation = "0" + permutation;
+				TaskSet potentialPickup = TaskSet.noneOf(cityTasks);
+				int j = 0;
+				for(var task:cityTasks){
+					if (permutation.charAt(j) == '1'){
+						newPlan.add(new Action.Pickup(task));
+						potentialPickup.add(task);
 					}
-
-					TaskSet potentialPickup = TaskSet.noneOf(cityTasks);
-					int j = 0;
-					for(var task:cityTasks){
-						if (permutation.charAt(j) == '1'){
-							newPlan.add(new Action.Pickup(task));
-							potentialPickup.add(task);
-						}
-						j++;
-					}
-					if (potentialPickup.weightSum() <= vehicle.capacity() - currentState.getCarryingTasks().weightSum()){
-						for (var neighbor: currentState.getLocation().neighbors()){
-							var newerPlan = new ArrayList<>(newPlan);
-							newerPlan.add(new Action.Move(neighbor));
-							var newestState = new State(
-									currentState,
-									neighbor,
-									currentState.getTotalCost() + currentState.getLocation().distanceTo(neighbor) * vehicle.costPerKm(),
-									TaskSet.union(currentState.getCarryingTasks(), potentialPickup),
-									TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
-									currentState.getDeliveredTasks(),
-									newerPlan);
-							queue.add(newestState);
-						}
+					j++;
+				}
+				if (potentialPickup.weightSum() <= vehicle.capacity() - currentState.getCarryingTasks().weightSum()){
+					for (var neighbor: currentState.getLocation().neighbors()){
+						var newerPlan = new ArrayList<>(newPlan);
+						newerPlan.add(new Action.Move(neighbor));
+						var newestState = new State(
+								currentState,
+								neighbor,
+								currentState.getTotalCost() + currentState.getLocation().distanceTo(neighbor) * vehicle.costPerKm(),
+								TaskSet.union(currentState.getCarryingTasks(), potentialPickup),
+								TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
+								currentState.getDeliveredTasks(),
+								newerPlan,
+								currentState.getTotalSteps() + 1);
+						queue.add(newestState);
 					}
 				}
 			}
-			//Construct plan
-			plan = new Plan(vehicle.getCurrentCity());
-			for(var action: terminalState.getActions()) {
-				plan.append(action);
-			}
-			System.out.println("Plan Competed!");
-			System.out.println(plan);
-			break;
-		default:
-			throw new AssertionError("Should not happen.");
-		}		
+		}
+		//Construct plan
+		plan = new Plan(vehicle.getCurrentCity());
+		for(var action: terminalState.getActions()) {
+			plan.append(action);
+		}
+		System.out.println("Plan Competed!");
+		System.out.println(plan);
+		System.out.println(String.format("%s%d", "Number of iterations: ", numberOfIterations));
 		return plan;
 	}
 	
-	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
-		City current = vehicle.getCurrentCity();
-		Plan plan = new Plan(current);
+	private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
+		Plan plan;
+		int numberOfIterations = 0;
 
-		for (Task task : tasks) {
-			// move: current city => pickup location
-			for (City city : current.pathTo(task.pickupCity))
-				plan.appendMove(city);
+		var visited = new HashMap<Integer, Double>();
 
-			plan.appendPickup(task);
+		PriorityQueue<State> queue = new PriorityQueue<>(new StateComparator());
 
-			// move: pickup location => delivery location
-			for (City city : task.path())
-				plan.appendMove(city);
+		var initialState = new State(
+				null,
+				vehicle.getCurrentCity(),
+				0,
+				TaskSet.noneOf(tasks),
+				TaskSet.copyOf(tasks),
+				TaskSet.noneOf(tasks),
+				new ArrayList<>(),
+				0
+		);
 
-			plan.appendDelivery(task);
+		queue.add(initialState);
 
-			// set current city
-			current = task.deliveryCity;
+		State terminalState = null;
+
+		while(!queue.isEmpty() && terminalState == null){
+			numberOfIterations++;
+			var currentState = queue.poll();
+
+			if(visited.containsKey(currentState.hashCode())){
+				if (visited.get(currentState.hashCode()) > currentState.getTotalCost()){
+					visited.put(currentState.hashCode(), currentState.getTotalCost());
+				}
+				else{
+					continue;
+				}
+			}
+			else{
+				visited.put(currentState.hashCode(), currentState.getTotalCost());
+			}
+
+			TaskSet deliverableTasks = TaskSet.copyOf(currentState.getCarryingTasks());
+
+			List<Action> currentPlan = currentState.getActions();
+
+			for(var task:currentState.getCarryingTasks()){
+				if (task.deliveryCity != currentState.getLocation()){
+					deliverableTasks.remove(task);
+				}
+			}
+			for (var task:deliverableTasks){
+				currentPlan.add(new Action.Delivery(task));
+			}
+			currentState.setCarryingTasks(TaskSet.intersectComplement(currentState.getCarryingTasks(), deliverableTasks));
+			currentState.setDeliveredTasks(TaskSet.union(currentState.getDeliveredTasks(), deliverableTasks));
+
+			if(currentState.getRemainingTasks().isEmpty() && currentState.getCarryingTasks().isEmpty()){
+				terminalState = currentState;
+				continue;
+			}
+			TaskSet cityTasks = TaskSet.noneOf(currentState.getRemainingTasks());
+
+			for(var task:currentState.getRemainingTasks()){
+				if (task.pickupCity == currentState.getLocation()){
+					cityTasks.add(task);
+				}
+			}
+			var permutationCounter = Math.pow(2, cityTasks.size());
+
+			for(var i = 0; i < permutationCounter; i++){
+				var newPlan = new ArrayList<Action>(currentPlan);
+				var permutation = Integer.toBinaryString(i);
+				while (permutation.length() < cityTasks.size()){
+					permutation = "0" + permutation;
+				}
+
+				TaskSet potentialPickup = TaskSet.noneOf(cityTasks);
+				int j = 0;
+				for(var task:cityTasks){
+					if (permutation.charAt(j) == '1'){
+						newPlan.add(new Action.Pickup(task));
+						potentialPickup.add(task);
+					}
+					j++;
+				}
+				if (potentialPickup.weightSum() <= vehicle.capacity() - currentState.getCarryingTasks().weightSum()){
+					for (var neighbor: currentState.getLocation().neighbors()){
+						var newerPlan = new ArrayList<>(newPlan);
+						newerPlan.add(new Action.Move(neighbor));
+						var newestState = new State(
+								currentState,
+								neighbor,
+								currentState.getTotalCost() + currentState.getLocation().distanceTo(neighbor) * vehicle.costPerKm(),
+								TaskSet.union(currentState.getCarryingTasks(), potentialPickup),
+								TaskSet.intersectComplement(currentState.getRemainingTasks(), potentialPickup),
+								currentState.getDeliveredTasks(),
+								newerPlan,
+								currentState.getTotalSteps() + 1);
+
+						queue.add(newestState);
+					}
+				}
+			}
 		}
+		//Construct plan
+		plan = new Plan(vehicle.getCurrentCity());
+		for(var action: terminalState.getActions()) {
+			plan.append(action);
+		}
+		System.out.println("Plan Competed!");
+		System.out.println(plan);
+		System.out.println(String.format("%s%d", "Number of iterations: ", numberOfIterations));
 		return plan;
 	}
 
