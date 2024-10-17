@@ -6,6 +6,7 @@ import logist.LogistSettings;
 import logist.agent.Agent;
 import logist.behavior.CentralizedBehavior;
 import logist.config.Parsers;
+import logist.plan.Action;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
@@ -16,6 +17,8 @@ import logist.topology.Topology.City;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -58,22 +61,43 @@ public class CentralizedTemplate implements CentralizedBehavior {
     @Override
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long time_start = System.currentTimeMillis();
-        
-//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-        Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
 
-        List<Plan> plans = new ArrayList<Plan>();
-        plans.add(planVehicle1);
-        while (plans.size() < vehicles.size()) {
-            plans.add(Plan.EMPTY);
+        var sls = new SLS(vehicles, tasks);
+
+        var plan = sls.createPlan();
+
+        var plans = new ArrayList<Plan>();
+
+        for(var entry : plan.getNextState().entrySet()){
+            var vehicle = entry.getKey();
+            var states = entry.getValue();
+            var actions = new ArrayList<Action>();
+
+            if(states.size() == 0){
+                plans.add(Plan.EMPTY);
+            }
+            else{
+                for (var state : states){
+                    if (state.isPickup()){
+                        actions.add(new Action.Pickup(state.getTask()));
+                    }
+                    else{
+                        actions.add(new Action.Delivery(state.getTask()));
+                    }
+                }
+                var vehiclePlan = new Plan(vehicle.homeCity(), actions);
+                plans.add(vehiclePlan);
+            }
+
         }
-        
+
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
         System.out.println("The plan was generated in " + duration + " milliseconds.");
-        
+
         return plans;
     }
+
 
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
         City current = vehicle.getCurrentCity();
