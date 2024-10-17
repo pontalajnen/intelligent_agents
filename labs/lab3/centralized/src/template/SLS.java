@@ -19,12 +19,15 @@ public class SLS {
 
     public CentralizedPlan createPlan(){
         var oldPlan = selectInitialSolution();
+        System.out.println("Initial plan done");
         int numberOfIterations = 10000;
         int unImprovedThresh = 0;
         do{
             var neighbours = chooseNeighbours(oldPlan);
-            var newPlan = localChoice(oldPlan, neighbours);
-            oldPlan = newPlan;
+            if(neighbours.size() > 0){
+                var newPlan = localChoice(oldPlan, neighbours);
+                oldPlan = newPlan;
+            }
             numberOfIterations--;
 
         }while(numberOfIterations > 0);
@@ -68,6 +71,7 @@ public class SLS {
         var random = new Random();
         int selectVehicleIndex = random.nextInt(vehicles.size());
         var exchangeVehicle = vehicles.get(selectVehicleIndex);
+        var oldPlanMap = oldPlan.getNextState();
 
         for (Vehicle currentVehicle : vehicles) {
             if(exchangeVehicle != currentVehicle){
@@ -79,18 +83,20 @@ public class SLS {
 
         }
 
-        int numberOfTasks = exchangeVehicle.getCurrentTasks().size();
+        if(oldPlanMap.get(exchangeVehicle) != null){
+            int numberOfStates = oldPlanMap.get(exchangeVehicle).size();
 
-        if(numberOfTasks >= 2){
-            for(int i = 0; i < numberOfTasks; ++i){
-                for(int j = 0; j < numberOfTasks; ++j){
-                    if (i != j){
-                        var newPlan = changeOrderStates(oldPlan, exchangeVehicle, i, j);
-                        if(!isConstraintViolated(newPlan)){
-                            planSet.add(newPlan);
+            if(numberOfStates >= 2){
+                for(int i = 0; i < numberOfStates; ++i){
+                    for(int j = 0; j < numberOfStates; ++j){
+                        if (i != j){
+                            var newPlan = changeOrderStates(oldPlan, exchangeVehicle, i, j);
+                            if(!isConstraintViolated(newPlan)){
+                                planSet.add(newPlan);
+                            }
                         }
-                    }
 
+                    }
                 }
             }
         }
@@ -106,23 +112,36 @@ public class SLS {
         var vehicleStates1 = newPlan.getNextState().get(vehicle1);
         var vehicleStates2 = newPlan.getNextState().get(vehicle2);
 
-        var startStateVehicle1 = vehicleStates1.getFirst();
-        vehicleStates1.removeFirst();
-        vehicleStates1.addFirst(vehicleStates2.getFirst());
-        vehicleStates2.remove();
-        vehicleStates2.addFirst(startStateVehicle1);
+        if(vehicleStates1 == null && vehicleStates2 != null){
+            vehicleStates1 = new LinkedList<State>();
+            vehicleStates2.removeFirst();
+        }
+        if(vehicleStates1 != null && vehicleStates2 == null){
+            vehicleStates2 = new LinkedList<State>();
+            vehicleStates2.add(vehicleStates1.getFirst());
+            vehicleStates1.removeFirst();
+        }
+        if(vehicleStates1 != null && vehicleStates2 != null){
+            var startStateVehicle1 = vehicleStates1.getFirst();
+            vehicleStates1.removeFirst();
+            vehicleStates1.addFirst(vehicleStates2.getFirst());
+            vehicleStates2.removeFirst();
+            vehicleStates2.addFirst(startStateVehicle1);
+        }
 
-        return newPlan;
+        var newPlanMap = newPlan.getNextState();
+        newPlanMap.put(vehicle1, vehicleStates1);
+        newPlanMap.put(vehicle2, vehicleStates2);
+
+        return new CentralizedPlan(newPlanMap);
     }
 
     private CentralizedPlan changeOrderStates(CentralizedPlan plan, Vehicle vehicle, int stateIndex1, int stateIndex2){
         var stateList =  plan.getNextState().get(vehicle);
         var state1 = stateList.get(stateIndex1);
         var state2 = stateList.get(stateIndex2);
-        stateList.add(stateIndex1, state2);
-        stateList.remove(stateIndex1 + 1);
-        stateList.add(stateIndex2, state1);
-        stateList.remove(stateIndex2 + 1);
+        stateList.set(stateIndex1, state2);
+        stateList.set(stateIndex2, state1);
 
         var newPlan = new CentralizedPlan(plan.getNextState());
         var newPlanMap = newPlan.getNextState();
@@ -166,14 +185,14 @@ public class SLS {
     }
     public int calculatePlanCost(CentralizedPlan plan) {
         int cost = 0;
-        HashMap<Vehicle, LinkedList<State>> nextState = plan.getNextState();
-        for (var entry : nextState.entrySet()) {
+        var planMap = plan.getNextState();
+        for (var entry : planMap.entrySet()) {
             var v1 = entry.getKey();
             var stateList = entry.getValue();
-            if (nextState.size() > 0) {
+            if (stateList != null && stateList.size() > 0) {
                 Task startTask = stateList.get(0).getTask();
                 cost += v1.homeCity().distanceTo(startTask.pickupCity) * v1.costPerKm();
-                for (int i = 0; i < nextState.size() - 1; i++) {
+                for (int i = 0; i < stateList.size() - 1; i++) {
                     State preState = stateList.get(i);
                     State postState = stateList.get(i + 1);
                     Task preTask = preState.getTask();

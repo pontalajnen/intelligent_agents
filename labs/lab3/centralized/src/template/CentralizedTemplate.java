@@ -62,33 +62,25 @@ public class CentralizedTemplate implements CentralizedBehavior {
     public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
         long time_start = System.currentTimeMillis();
 
+        System.out.println("Before SLS");
         var sls = new SLS(vehicles, tasks);
 
         var plan = sls.createPlan();
+        System.out.println("After SLS");
 
         var plans = new ArrayList<Plan>();
 
-        for(var entry : plan.getNextState().entrySet()){
-            var vehicle = entry.getKey();
-            var states = entry.getValue();
-            var actions = new ArrayList<Action>();
 
-            if(states.size() == 0){
-                plans.add(Plan.EMPTY);
-            }
-            else{
-                for (var state : states){
-                    if (state.isPickup()){
-                        actions.add(new Action.Pickup(state.getTask()));
-                    }
-                    else{
-                        actions.add(new Action.Delivery(state.getTask()));
-                    }
-                }
-                var vehiclePlan = new Plan(vehicle.homeCity(), actions);
+        var planMap = plan.getNextState();
+
+        for(var vehicle : vehicles){
+            if(planMap.containsKey(vehicle)){
+                var vehiclePlan = buildPlan(vehicle, planMap.get(vehicle));
                 plans.add(vehiclePlan);
             }
-
+            else{
+               plans.add(Plan.EMPTY);
+            }
         }
 
         long time_end = System.currentTimeMillis();
@@ -96,6 +88,30 @@ public class CentralizedTemplate implements CentralizedBehavior {
         System.out.println("The plan was generated in " + duration + " milliseconds.");
 
         return plans;
+    }
+
+    private Plan buildPlan(Vehicle vehicle, LinkedList<State> stateList){
+        var currentCity = vehicle.homeCity();
+        var plan = new Plan(currentCity);
+
+        for(var state : stateList){
+            if (state.isPickup()){
+                for(var city : currentCity.pathTo(state.getTask().pickupCity)){
+                    plan.appendMove(city);
+                }
+                currentCity = state.getTask().pickupCity;
+                plan.appendPickup(state.getTask());
+            }
+            else{
+                for(var city : currentCity.pathTo(state.getTask().deliveryCity)){
+                    plan.appendMove(city);
+                }
+                currentCity = state.getTask().deliveryCity;
+                plan.appendDelivery(state.getTask());
+
+            }
+        }
+        return plan;
     }
 
 

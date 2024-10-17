@@ -2,7 +2,7 @@
 
 <history configuration="config/deliberative.xml">
 	<agents>
-		<agent name="deliberative-astar">
+		<agent name="deliberative-bfs">
 			<vehicle name="Vehicle 1"/>
 		</agent>
 	</agents>
@@ -20,34 +20,51 @@
 				<task id="8" pickup="Neuchâtel" delivery="Genève" weight="3" reward="69417"/>
 			</tasks>
 			<events>
-				<event id="0" time="0" vehicle="Vehicle 1" move="Neuchâtel"/>
-				<event id="1" time="1111111051" vehicle="Vehicle 1" pickup="8"/>
-				<event id="2" time="1411111031" vehicle="Vehicle 1" move="Bern"/>
-				<event id="3" time="2077777656" vehicle="Vehicle 1" move="Basel"/>
-				<event id="4" time="3633333122" vehicle="Vehicle 1" pickup="7"/>
-				<event id="5" time="3933333107" vehicle="Vehicle 1" move="Zürich"/>
-				<event id="6" time="5266666366" vehicle="Vehicle 1" pickup="1"/>
-				<event id="7" time="5566666348" vehicle="Vehicle 1" move="Luzern"/>
-				<event id="8" time="6344444082" vehicle="Vehicle 1" pickup="6"/>
-				<event id="9" time="6644444066" vehicle="Vehicle 1" move="Aarau"/>
-				<event id="10" time="7644444014" vehicle="Vehicle 1" pickup="0"/>
-				<event id="11" time="7944443998" vehicle="Vehicle 1" move="Bern"/>
-				<event id="12" time="9166666150" vehicle="Vehicle 1" move="Thun"/>
-				<event id="13" time="9611110571" vehicle="Vehicle 1" move="Sion"/>
-				<event id="14" time="10944443827" vehicle="Vehicle 1" deliver="1"/>
-				<event id="15" time="11244443810" vehicle="Vehicle 1" pickup="2"/>
-				<event id="16" time="11544443794" vehicle="Vehicle 1" pickup="5"/>
-				<event id="17" time="11844443778" vehicle="Vehicle 1" move="Lausanne"/>
+				<event id="0" time="0" vehicle="Vehicle 1" pickup="4"/>
+				<event id="1" time="299999987" vehicle="Vehicle 1" move="Sion"/>
+				<event id="2" time="1966666561" vehicle="Vehicle 1" pickup="2"/>
+				<event id="3" time="2266666539" vehicle="Vehicle 1" pickup="5"/>
+				<event id="4" time="2566666520" vehicle="Vehicle 1" move="Thun"/>
+				<event id="5" time="3899999780" vehicle="Vehicle 1" move="Bern"/>
+				<event id="6" time="4344444196" vehicle="Vehicle 1" move="Aarau"/>
+				<event id="7" time="5566666351" vehicle="Vehicle 1" move="Luzern"/>
+				<event id="8" time="6566666298" vehicle="Vehicle 1" pickup="6"/>
+				<event id="9" time="6866666279" vehicle="Vehicle 1" move="Zürich"/>
+				<event id="10" time="7644444016" vehicle="Vehicle 1" move="Basel"/>
+				<event id="11" time="8977777279" vehicle="Vehicle 1" deliver="5"/>
+				<event id="12" time="9277777263" vehicle="Vehicle 1" deliver="6"/>
+				<event id="13" time="9577777249" vehicle="Vehicle 1" pickup="3"/>
+				<event id="14" time="9877777233" vehicle="Vehicle 1" pickup="7"/>
+				<event id="15" time="10177777216" vehicle="Vehicle 1" move="Zürich"/>
+				<event id="16" time="11511110473" vehicle="Vehicle 1" move="St-Gallen"/>
+				<event id="17" time="12844443723" vehicle="Vehicle 1" deliver="3"/>
+				<event id="18" time="13144443704" vehicle="Vehicle 1" deliver="4"/>
+				<event id="19" time="13444443689" vehicle="Vehicle 1" move="Zürich"/>
+				<event id="20" time="14777776943" vehicle="Vehicle 1" pickup="1"/>
+				<event id="21" time="15077776925" vehicle="Vehicle 1" move="Aarau"/>
+				<event id="22" time="15744443555" vehicle="Vehicle 1" pickup="0"/>
+				<event id="23" time="16044443538" vehicle="Vehicle 1" move="Bern"/>
+				<event id="24" time="17266665696" vehicle="Vehicle 1" move="Neuchâtel"/>
+				<event id="25" time="17933332332" vehicle="Vehicle 1" deliver="7"/>
+				<event id="26" time="18233332315" vehicle="Vehicle 1" pickup="8"/>
+				<event id="27" time="18533332301" vehicle="Vehicle 1" move="Lausanne"/>
+				<event id="28" time="19644443352" vehicle="Vehicle 1" move="Genève"/>
+				<event id="29" time="20644443287" vehicle="Vehicle 1" deliver="0"/>
+				<event id="30" time="20944443271" vehicle="Vehicle 1" deliver="2"/>
+				<event id="31" time="21244443253" vehicle="Vehicle 1" deliver="8"/>
+				<event id="32" time="21544443237" vehicle="Vehicle 1" move="Lausanne"/>
+				<event id="33" time="22544443183" vehicle="Vehicle 1" move="Sion"/>
+				<event id="34" time="24211109762" vehicle="Vehicle 1" deliver="1"/>
 			</events>
 		</round>
 	</rounds>
 	<statistics>
-		<stat rank="1" agent="deliberative-astar">
+		<stat rank="1" agent="deliberative-bfs">
 			<total-tasks value="9"/>
-			<total-distance value="1000.0"/>
-			<total-cost value="5000"/>
-			<total-reward value="40875"/>
-			<total-profit value="35875"/>
+			<total-distance value="1720.0"/>
+			<total-cost value="8600"/>
+			<total-reward value="467769"/>
+			<total-profit value="459169"/>
 		</stat>
 	</statistics>
 </history>
