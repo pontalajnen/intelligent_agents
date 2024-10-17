@@ -16,10 +16,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -67,6 +64,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
 
         var plan = sls.createPlan();
         System.out.println("After SLS");
+        printPlan(plan);
 
         var plans = new ArrayList<Plan>();
 
@@ -86,6 +84,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
         System.out.println("The plan was generated in " + duration + " milliseconds.");
+        System.out.println(plan);
 
         return plans;
     }
@@ -138,5 +137,11 @@ public class CentralizedTemplate implements CentralizedBehavior {
             current = task.deliveryCity;
         }
         return plan;
+    }
+    public void printPlan(CentralizedPlan plan) {
+        HashMap<Vehicle, LinkedList<State>> vehicleToState = plan.getNextState();
+        for (Map.Entry<Vehicle, LinkedList<State>> entry : vehicleToState.entrySet()) {
+            System.out.println(entry.getKey().name() + " " + entry.getValue());
+        }
     }
 }

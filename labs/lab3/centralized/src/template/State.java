@@ -1,5 +1,6 @@
 package template;
 
+import logist.simulation.Vehicle;
 import logist.task.Task;
 
 import java.util.Objects;
@@ -21,13 +22,7 @@ public class State {
         return task;
     }
 
-    public void setTask(Task task) {
-        this.task = task;
-    }
 
-    public void setPickup(boolean pickup) {
-        this.pickup = pickup;
-    }
 
     @Override
     public int hashCode() {
@@ -35,5 +30,9 @@ public class State {
                 pickup,
                 task
         );
+    }
+    @Override
+    public String toString() {
+        return "State [isPickup=" + pickup + ", currentTask=" + task + "]";
     }
 }

@@ -20,9 +20,10 @@ public class SLS {
     public CentralizedPlan createPlan(){
         var oldPlan = selectInitialSolution();
         System.out.println("Initial plan done");
-        int numberOfIterations = 10000;
+        int numberOfIterations = 25;
         int unImprovedThresh = 0;
         do{
+            System.out.println(numberOfIterations);
             var neighbours = chooseNeighbours(oldPlan);
             if(neighbours.size() > 0){
                 var newPlan = localChoice(oldPlan, neighbours);
@@ -86,7 +87,7 @@ public class SLS {
         if(oldPlanMap.get(exchangeVehicle) != null){
             int numberOfStates = oldPlanMap.get(exchangeVehicle).size();
 
-            if(numberOfStates >= 2){
+            if(numberOfStates > 2){
                 for(int i = 0; i < numberOfStates; ++i){
                     for(int j = 0; j < numberOfStates; ++j){
                         if (i != j){
@@ -106,34 +107,25 @@ public class SLS {
         return planSet;
     }
 
-    private CentralizedPlan changeVehicle(Vehicle vehicle1, Vehicle vehicle2, CentralizedPlan plan){
+    private CentralizedPlan hangeVehicle(Vehicle vehicle1, Vehicle vehicle2, CentralizedPlan plan){
         var newPlan = new CentralizedPlan(plan.getNextState());
 
         var vehicleStates1 = newPlan.getNextState().get(vehicle1);
         var vehicleStates2 = newPlan.getNextState().get(vehicle2);
 
         if(vehicleStates1 == null && vehicleStates2 != null){
-            vehicleStates1 = new LinkedList<State>();
-            vehicleStates2.removeFirst();
+            newPlan.moveTask(vehicle2, vehicle1, vehicleStates2.getFirst().getTask());
         }
         if(vehicleStates1 != null && vehicleStates2 == null){
-            vehicleStates2 = new LinkedList<State>();
-            vehicleStates2.add(vehicleStates1.getFirst());
-            vehicleStates1.removeFirst();
+            newPlan.moveTask(vehicle1, vehicle2, vehicleStates1.getFirst().getTask());
         }
         if(vehicleStates1 != null && vehicleStates2 != null){
-            var startStateVehicle1 = vehicleStates1.getFirst();
-            vehicleStates1.removeFirst();
-            vehicleStates1.addFirst(vehicleStates2.getFirst());
-            vehicleStates2.removeFirst();
-            vehicleStates2.addFirst(startStateVehicle1);
+            var firstTaskVehicle1 = vehicleStates1.getFirst().getTask();
+            newPlan.moveTask(vehicle2, vehicle1, vehicleStates2.getFirst().getTask());
+            newPlan.moveTask(vehicle1, vehicle2, firstTaskVehicle1);
         }
 
-        var newPlanMap = newPlan.getNextState();
-        newPlanMap.put(vehicle1, vehicleStates1);
-        newPlanMap.put(vehicle2, vehicleStates2);
-
-        return new CentralizedPlan(newPlanMap);
+        return new CentralizedPlan(newPlan.getNextState());
     }
 
     private CentralizedPlan changeOrderStates(CentralizedPlan plan, Vehicle vehicle, int stateIndex1, int stateIndex2){
