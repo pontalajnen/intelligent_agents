@@ -2,3 +2,4 @@ reactive/out/
 reactive/.idea/
 labs/*/reactive/out
 .DS_Store
+.idea/
