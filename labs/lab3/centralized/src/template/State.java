@@ -23,12 +23,38 @@ public class State {
     }
 
 
+    @Override
+    public boolean equals(Object o) {
+
+        // If the object is compared with itself then return true
+        if (o == this) {
+            return true;
+        }
+
+        /* Check if o is an instance of Complex or not
+          "null instanceof [type]" also returns false */
+        if (!(o instanceof State)) {
+            return false;
+        }
+
+        // typecast o to Complex so that we can compare data members
+        State c = (State) o;
+
+        if(c.getTask().id != this.getTask().id){
+            return false;
+        }
+        if(c.isPickup() != this.isPickup()){
+            return false;
+        }
+        return true;
+
+    }
 
     @Override
     public int hashCode() {
         return Objects.hash(
                 pickup,
-                task
+                task.id
         );
     }
     @Override

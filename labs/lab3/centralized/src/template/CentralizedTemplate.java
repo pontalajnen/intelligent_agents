@@ -64,7 +64,7 @@ public class CentralizedTemplate implements CentralizedBehavior {
 
         var plan = sls.createPlan();
         System.out.println("After SLS");
-        printPlan(plan);
+        //printPlan(plan);
 
         var plans = new ArrayList<Plan>();
 

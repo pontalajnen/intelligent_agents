@@ -20,20 +20,33 @@ public class SLS {
     public CentralizedPlan createPlan(){
         var oldPlan = selectInitialSolution();
         System.out.println("Initial plan done");
-        int numberOfIterations = 25;
+        var bestPlan = oldPlan;
+        int numberOfIterations = 10000;
         int unImprovedThresh = 0;
         do{
-            System.out.println(numberOfIterations);
             var neighbours = chooseNeighbours(oldPlan);
-            if(neighbours.size() > 0){
-                var newPlan = localChoice(oldPlan, neighbours);
-                oldPlan = newPlan;
+            if (numberOfIterations % 500 == 0) {
+                System.out.println("----------------------------");
+                System.out.println(numberOfIterations);
+                System.out.println("Current cost: " + calculatePlanCost(oldPlan));
+                System.out.println("Best current cost: " + calculatePlanCost(bestPlan));
+                System.out.println("Number of neighbours: " + neighbours.size());
+            }
+            if(!neighbours.isEmpty()){
+                oldPlan = localChoice(oldPlan, neighbours);
+            }
+            if(calculatePlanCost(oldPlan) < calculatePlanCost(bestPlan)){
+                bestPlan = oldPlan;
             }
             numberOfIterations--;
 
         }while(numberOfIterations > 0);
+        System.out.println("----------------------------");
+        System.out.println("Final plan cost: " + calculatePlanCost(oldPlan));
+        System.out.println("Best plan cost: " + calculatePlanCost(bestPlan));
 
-       return oldPlan;
+        return bestPlan;
+
     }
 
     private CentralizedPlan selectInitialSolution(){
@@ -68,21 +81,39 @@ public class SLS {
     }
 
     private ArrayList<CentralizedPlan> chooseNeighbours (CentralizedPlan oldPlan){
+        CentralizedPlan oldPlanCopy = null;
+        try{
+            oldPlanCopy = (CentralizedPlan) oldPlan.clone();
+        }catch (CloneNotSupportedException e){
+            System.out.println("Error!");
+        }
+
         var planSet = new ArrayList<CentralizedPlan>();
         var random = new Random();
         int selectVehicleIndex = random.nextInt(vehicles.size());
-        var exchangeVehicle = vehicles.get(selectVehicleIndex);
-        var oldPlanMap = oldPlan.getNextState();
+        var oldPlanMap = oldPlanCopy.getNextState();
 
-        for (Vehicle currentVehicle : vehicles) {
-            if(exchangeVehicle != currentVehicle){
-                var newPlan = changeVehicle(exchangeVehicle, currentVehicle, oldPlan);
-                if(!isConstraintViolated(newPlan)){
-                    planSet.add(newPlan);
+
+        for (Vehicle exchangeVehicle : vehicles){
+            for (Vehicle currentVehicle : vehicles) {
+                if(exchangeVehicle != currentVehicle){
+                    CentralizedPlan newPlanCopy = null;
+                    try{
+                        newPlanCopy = (CentralizedPlan) oldPlan.clone();
+                    }catch (CloneNotSupportedException e){
+                        System.out.println("Error!");
+                    }
+                    var newPlan = changeVehicle(exchangeVehicle, currentVehicle, newPlanCopy);
+
+                    if(!isConstraintViolated(newPlan)){
+                        planSet.add(newPlan);
+                    }
                 }
             }
 
         }
+
+        var exchangeVehicle = vehicles.get(selectVehicleIndex);
 
         if(oldPlanMap.get(exchangeVehicle) != null){
             int numberOfStates = oldPlanMap.get(exchangeVehicle).size();
@@ -91,12 +122,17 @@ public class SLS {
                 for(int i = 0; i < numberOfStates; ++i){
                     for(int j = 0; j < numberOfStates; ++j){
                         if (i != j){
-                            var newPlan = changeOrderStates(oldPlan, exchangeVehicle, i, j);
+                            CentralizedPlan newPlanCopy = null;
+                            try{
+                                newPlanCopy = (CentralizedPlan) oldPlan.clone();
+                            }catch (CloneNotSupportedException e){
+                                System.out.println("Error!");
+                            }
+                            var newPlan = changeOrderStates(newPlanCopy, exchangeVehicle, i, j);
                             if(!isConstraintViolated(newPlan)){
                                 planSet.add(newPlan);
                             }
                         }
-
                     }
                 }
             }
@@ -107,22 +143,38 @@ public class SLS {
         return planSet;
     }
 
-    private CentralizedPlan hangeVehicle(Vehicle vehicle1, Vehicle vehicle2, CentralizedPlan plan){
+    private CentralizedPlan changeVehicle(Vehicle vehicle1, Vehicle vehicle2, CentralizedPlan plan){
         var newPlan = new CentralizedPlan(plan.getNextState());
 
         var vehicleStates1 = newPlan.getNextState().get(vehicle1);
         var vehicleStates2 = newPlan.getNextState().get(vehicle2);
 
-        if(vehicleStates1 == null && vehicleStates2 != null){
+        if((vehicleStates1 == null || vehicleStates1.isEmpty()) && vehicleStates2 != null && !vehicleStates2.isEmpty()){
             newPlan.moveTask(vehicle2, vehicle1, vehicleStates2.getFirst().getTask());
         }
-        if(vehicleStates1 != null && vehicleStates2 == null){
+        else if(vehicleStates1 != null  && (vehicleStates2 == null || vehicleStates2.isEmpty()) && !vehicleStates1.isEmpty()){
             newPlan.moveTask(vehicle1, vehicle2, vehicleStates1.getFirst().getTask());
         }
-        if(vehicleStates1 != null && vehicleStates2 != null){
-            var firstTaskVehicle1 = vehicleStates1.getFirst().getTask();
-            newPlan.moveTask(vehicle2, vehicle1, vehicleStates2.getFirst().getTask());
-            newPlan.moveTask(vehicle1, vehicle2, firstTaskVehicle1);
+        else if(vehicleStates1 != null && vehicleStates2 != null && !vehicleStates2.isEmpty() && !vehicleStates1.isEmpty()){
+            var random = new Random();
+            var p = random.nextInt(3);
+
+            switch (p){
+                case 0:
+                    newPlan.moveTask(vehicle1, vehicle2, vehicleStates1.getFirst().getTask());
+                    break;
+                case 1:
+                    newPlan.moveTask(vehicle2, vehicle1, vehicleStates2.getFirst().getTask());
+                    break;
+                case 2:
+                    var firstTaskVehicle1 = vehicleStates1.getFirst().getTask();
+                    newPlan.moveTask(vehicle2, vehicle1, vehicleStates2.getFirst().getTask());
+                    newPlan.moveTask(vehicle1, vehicle2, firstTaskVehicle1);
+                    break;
+                default:
+                    System.out.println("WTF!!!!");
+                    break;
+            }
         }
 
         return new CentralizedPlan(newPlan.getNextState());
@@ -164,10 +216,12 @@ public class SLS {
                     }
                     else{
                         isViolated = true;
+                        break;
                     }
                 }
                 if(temp_weight > entry.getKey().capacity()){
                     isViolated = true;
+                    break;
                 }
             }
         }
@@ -175,6 +229,7 @@ public class SLS {
         return isViolated;
 
     }
+
     public int calculatePlanCost(CentralizedPlan plan) {
         int cost = 0;
         var planMap = plan.getNextState();
@@ -209,7 +264,7 @@ public class SLS {
         }
 
         var random = new Random();
-        int p = 35;
+        int p = 37;
         int r = random.nextInt(100);
 
         return r < p ? oldPlan : (r < 2 * p ? minCostPlan : plans.get(random.nextInt(plans.size())));
