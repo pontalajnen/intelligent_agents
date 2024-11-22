@@ -31,29 +31,39 @@ public class AuctionTemplate implements AuctionBehavior {
 	private TaskDistribution distribution;
 	private Agent agent;
 	private Random random;
-	private Vehicle vehicle;
-	private City currentCity;
+	private List<Vehicle> vehicles;
 	private long timeout_setup;
 	private long timeout_plan;
+	private TaskSet wonTasks;
+	private double currentCost;
+	private double potentialNewCost;
+
+
+	private double p;
 
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
 			Agent agent) {
 
+		Task[] emptyTaskArray = {};
+
 		this.topology = topology;
 		this.distribution = distribution;
 		this.agent = agent;
-		this.vehicle = agent.vehicles().get(0);
-		this.currentCity = vehicle.homeCity();
+		this.vehicles = agent.vehicles();
+		this.p = 0.2;
+		this.wonTasks = TaskSet.create(emptyTaskArray);
+		this.currentCost = 0;
+		this.potentialNewCost = 0;
 
-		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
+		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
 		try {
-			ls = Parsers.parseSettings("config" + File.separator + "settings_default.xml");
+			ls = Parsers.parseSettings("config" + File.separator + "settings_auction.xml");
 		} catch (Exception exc) {
 			System.out.println("There was a problem loading the configuration file.");
 		}
@@ -67,27 +77,28 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
-		if (winner == agent.id()) {
-			currentCity = previous.deliveryCity;
+		// We won the auction
+		if (winner == agent.id()){
+			wonTasks.add(previous);
+			currentCost = potentialNewCost;
 		}
 	}
 	
 	@Override
 	public Long askPrice(Task task) {
+		if (!Helper.CanCarryTask(vehicles, task)){
+			return Long.MAX_VALUE;
+		}
 
-		if (vehicle.capacity() < task.weight)
-			return null;
+		var tempTasks = wonTasks.clone();
+		tempTasks.add(task);
+		var plans = plan(vehicles, wonTasks);
 
-		long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
-		long distanceSum = distanceTask
-				+ currentCity.distanceUnitsTo(task.pickupCity);
-		double marginalCost = Measures.unitsToKM(distanceSum
-				* vehicle.costPerKm());
+		potentialNewCost = Helper.CalculateCostOfPlans(plans, vehicles);
+		var marginalCost = potentialNewCost - currentCost;
 
-		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
-		double bid = ratio * marginalCost;
-
-		return (long) Math.round(bid);
+		System.out.println("OUR AGENT: MARGINAL COST IS " + marginalCost);
+		return Math.round(marginalCost);
 	}
 
 	// Solve the optimization problem with the SLS algorithm
@@ -140,20 +151,6 @@ public class AuctionTemplate implements AuctionBehavior {
 		return plan;
 	}
 
-//	@Override
-//	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-//
-////		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-//
-//		Plan planVehicle1 = naivePlan(vehicle, tasks);
-//
-//		List<Plan> plans = new ArrayList<Plan>();
-//		plans.add(planVehicle1);
-//		while (plans.size() < vehicles.size())
-//			plans.add(Plan.EMPTY);
-//
-//		return plans;
-//	}
 
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
 		City current = vehicle.getCurrentCity();

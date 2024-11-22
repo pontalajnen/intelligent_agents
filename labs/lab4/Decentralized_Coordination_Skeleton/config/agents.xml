@@ -8,5 +8,9 @@
 		<set class-path="out/production/Decentralized_Coordination_Skeleton"/>
 		<set class-name="template.AuctionTemplate"/>
 	</agent>
-	
+
+	<agent name="auction-naive">
+		<set class-path="out/production/Decentralized_Coordination_Skeleton"/>
+		<set class-name="template.AuctionTemplate"/>
+	</agent>
 </agents>
