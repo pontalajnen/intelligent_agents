@@ -15,6 +15,9 @@ import logist.task.TaskDistribution;
 import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
+import logist.LogistSettings;
+import java.io.File;
+import logist.config.Parsers;
 
 /**
  * A very simple auction agent that assigns all tasks to its first vehicle and
@@ -30,6 +33,9 @@ public class AuctionTemplate implements AuctionBehavior {
 	private Random random;
 	private Vehicle vehicle;
 	private City currentCity;
+	private long timeout_setup;
+	private long timeout_plan;
+
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -43,6 +49,20 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
 		this.random = new Random(seed);
+
+		// this code is used to get the timeouts
+		LogistSettings ls = null;
+		try {
+			ls = Parsers.parseSettings("config" + File.separator + "settings_default.xml");
+		} catch (Exception exc) {
+			System.out.println("There was a problem loading the configuration file.");
+		}
+
+		// the setup method cannot last more than timeout_setup milliseconds
+		timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
+
+		// the plan method cannot execute more than timeout_plan milliseconds
+		timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN) - 200;	// We add a little safety margin
 	}
 
 	@Override
@@ -70,20 +90,70 @@ public class AuctionTemplate implements AuctionBehavior {
 		return (long) Math.round(bid);
 	}
 
-	@Override
+	// Solve the optimization problem with the SLS algorithm
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		
-//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
-		Plan planVehicle1 = naivePlan(vehicle, tasks);
+		System.out.println("Building plan...");
 
-		List<Plan> plans = new ArrayList<Plan>();
-		plans.add(planVehicle1);
-		while (plans.size() < vehicles.size())
-			plans.add(Plan.EMPTY);
+		long time_start = System.currentTimeMillis();
 
-		return plans;
+		// Initialize list of tasks
+		List<Task> task_list = new ArrayList<>(tasks);
+
+		// Begin SLS Algorithm
+
+		// create initial solution
+		Candidate A = Candidate.SelectInitialSolution(random, vehicles, task_list);
+
+		// Optimization loop - repeat until timeout
+		boolean timeout_reached = false;
+
+		while(!timeout_reached)	{
+
+			// record old solution
+			Candidate A_old = A;
+
+			// generate neighbours
+			List<Candidate> N = A_old.ChooseNeighbours(random);
+
+			// Get the solution for the next iteration
+			A = LocalChoice(N, A_old);
+
+			// Check timeout condition
+			if( System.currentTimeMillis() - time_start > timeout_plan ) {
+				timeout_reached = true;
+			}
+		}
+
+		// End SLS Algorithm
+
+		// Build plans for vehicles from the found solution
+		List<Plan> plan = PlanFromSolution(A);
+
+		// Informative outputs
+		long time_end = System.currentTimeMillis();
+		long duration = time_end - time_start;
+		double cost_plan  = A.cost;
+
+		System.out.println("The plan was generated in " + duration + " ms with a cost of " + A.cost);
+
+		return plan;
 	}
+
+//	@Override
+//	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+//
+////		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
+//
+//		Plan planVehicle1 = naivePlan(vehicle, tasks);
+//
+//		List<Plan> plans = new ArrayList<Plan>();
+//		plans.add(planVehicle1);
+//		while (plans.size() < vehicles.size())
+//			plans.add(Plan.EMPTY);
+//
+//		return plans;
+//	}
 
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
 		City current = vehicle.getCurrentCity();
@@ -106,5 +176,78 @@ public class AuctionTemplate implements AuctionBehavior {
 			current = task.deliveryCity;
 		}
 		return plan;
+	}
+
+	// Local choice to choose the next solution from the neighbours and the current solution
+	public Candidate LocalChoice(List<Candidate> N, Candidate A) {
+		if (random.nextFloat() < p) {	// Return A with probability p
+			return A;
+		}
+		else {	// Return the best neightbour with probability 1-p
+
+			int best_cost_index = 0; // index of the neighbour with best cost until now
+			double best_cost = N.get(best_cost_index).cost; // cost of the neighbour with best cost until now
+
+			for (int n_ind = 1; n_ind < N.size(); n_ind++ ) {
+				// check if current alternative has lower cost than the current best
+				if( N.get(n_ind).cost < best_cost )	{
+					// if so, update the best solution
+					best_cost_index = n_ind;
+					best_cost = N.get(best_cost_index).cost;
+				}
+			}
+
+			// return the best solution
+			return N.get(best_cost_index);
+		}
+	}
+
+	// Build the plan for logist platform from the candidate solution
+	public List<Plan> PlanFromSolution(Candidate A) {
+
+		// System.out.println("Constructing plan from solution...");
+
+		List<Plan> plan_list = new ArrayList<>();	// create empty list of plans
+
+		// Build plan for each vehicle
+		for (int vehicle_ind = 0; vehicle_ind < A.vehicles.size(); vehicle_ind++) {
+
+			Vehicle v = A.vehicles.get(vehicle_ind);
+
+			// get constructed plan of the vehicle
+			List<PD_Action> plan = A.plans.get(vehicle_ind);
+
+			// follow vehicle cities to construct plan
+			City current_city = v.getCurrentCity();
+			Plan v_plan = new Plan(current_city);
+
+			// Append required primitive actions for each pickup/delivery action
+			for (PD_Action act : plan) {
+
+				City next_city;
+				if(act.is_pickup) {
+					next_city = act.task.pickupCity;
+				}
+				else {
+					next_city = act.task.deliveryCity;
+				}
+
+				// Append move actions
+				for(City move_city : current_city.pathTo(next_city)) {
+					v_plan.appendMove(move_city);
+				}
+				// Append pickup-delivery actions
+				if (act.is_pickup) {
+					v_plan.appendPickup(act.task);
+				} else {
+					v_plan.appendDelivery(act.task);
+				}
+				current_city = next_city;
+			}
+
+			// add plan to the list of plans
+			plan_list.add(v_plan);
+		}
+		return plan_list;
 	}
 }
