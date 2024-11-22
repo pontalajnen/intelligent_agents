@@ -34,7 +34,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private List<Vehicle> vehicles;
 	private long timeout_setup;
 	private long timeout_plan;
-	private TaskSet wonTasks;
+	private List<PseudoTask> wonTasks;
 	private double currentCost;
 	private double potentialNewCost;
 
@@ -53,9 +53,9 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.agent = agent;
 		this.vehicles = agent.vehicles();
 		this.p = 0.2;
-		this.wonTasks = TaskSet.create(emptyTaskArray);
 		this.currentCost = 0;
 		this.potentialNewCost = 0;
+		this.wonTasks = new ArrayList<PseudoTask>();
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -79,7 +79,8 @@ public class AuctionTemplate implements AuctionBehavior {
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		// We won the auction
 		if (winner == agent.id()){
-			wonTasks.add(previous);
+			wonTasks.add(new PseudoTask(previous));
+				wonTasks.add(new PseudoTask(previous));
 			currentCost = potentialNewCost;
 		}
 	}
@@ -90,9 +91,15 @@ public class AuctionTemplate implements AuctionBehavior {
 			return Long.MAX_VALUE;
 		}
 
-		var tempTasks = wonTasks.clone();
-		tempTasks.add(task);
-		var plans = plan(vehicles, wonTasks);
+		var tempTasks = new ArrayList<PseudoTask>(wonTasks);
+		tempTasks.add(new PseudoTask(task));
+
+		Task[] tasks = new Task[tempTasks.size()];
+		for (int i = 0; i < tempTasks.size(); i++) {
+			tasks[i] = tempTasks.get(i).task;
+		}
+
+		var plans = plan(vehicles, TaskSet.create(tasks));
 
 		potentialNewCost = Helper.CalculateCostOfPlans(plans, vehicles);
 		var marginalCost = potentialNewCost - currentCost;
