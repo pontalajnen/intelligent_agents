@@ -16,15 +16,6 @@ cd ..
 # Create the tournament
 java -jar ./logist/logist.jar -new $1 ./agents
 
-# Remove the weird agent2 thing
-
-cd "tournament"
-cd $1
-sed -i.bak -e "15,18d" agents.xml
-rm agents.xml.bak
-cd ..
-cd ..
-
 java -jar ./logist/logist.jar -run $1 ./config/auction.xml
 
 java -jar ./logist/logist.jar -score $1 scores.txt
