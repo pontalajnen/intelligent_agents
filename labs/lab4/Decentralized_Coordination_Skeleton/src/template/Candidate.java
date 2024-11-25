@@ -495,31 +495,5 @@ public class Candidate {
     double updated_cost = this.cost - i_cost_old + i_cost_new;
 
     return new Candidate(vehicles, updated_plans, taskLists, updated_cost);
-
-
     }
-
-
-    public void addTask(Task t) {
-        // Get the vehicle with the largest capacity
-        double vehicle_capacities[];
-        vehicle_capacities = new double[vehicles.size()];
-        int largest_vehicle = MaxIndex(vehicle_capacities);
-
-        // Assign the new task to the end of the current plan of the largest vehicle
-        this.plans.get(largest_vehicle).add(new PD_Action(true, t));
-        this.plans.get(largest_vehicle).add(new PD_Action(false, t));
-        this.taskLists.get(largest_vehicle).add(t);
-
-        // calculate the cost of augmented solution
-        double new_cost = 0.0;
-        // accumulate the cost borne by each vehicle
-        for (int i = 0; i < vehicles.size(); i++) {
-            new_cost += ComputeCost(vehicles.get(i), plans.get(i));
-        }
-
-        this.cost = new_cost;
-    }
-
-
 }

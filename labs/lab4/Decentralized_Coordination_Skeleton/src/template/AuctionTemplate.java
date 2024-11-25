@@ -1,6 +1,7 @@
 package template;
 
 //the list of imports
+import java.io.Console;
 import java.util.*;
 
 import logist.Measures;
@@ -35,6 +36,8 @@ public class AuctionTemplate implements AuctionBehavior {
 	private List<Task> wonTasks;
 	private double currentCost;
 	private double potentialNewCost;
+	private Candidate currentPlan;
+	private Candidate potentialNewPlan;
 
 	private double p;
 
@@ -51,6 +54,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.currentCost = 0;
 		this.potentialNewCost = 0;
 		this.wonTasks = new ArrayList<>();
+		this.currentPlan = new Candidate(vehicles);
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -76,6 +80,8 @@ public class AuctionTemplate implements AuctionBehavior {
 		if (winner == agent.id()){
 			 wonTasks.add(previous);
 			 currentCost = potentialNewCost;
+			 currentPlan = potentialNewPlan;
+			 System.out.println("Our agent won the auction");
 		}
 	}
 	
@@ -87,19 +93,37 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		var tempTasks = new ArrayList<>(wonTasks);
 		tempTasks.add(task);
-		var plan = internalPlan(vehicles, tempTasks);
+		potentialNewPlan = new Candidate(vehicles, currentPlan.plans, currentPlan.taskLists, currentPlan.cost);
+
+		Vehicle highestCapacityVehicle = currentPlan.vehicles.get(0);
+		int index = 0;
+		for (Vehicle vehicle : currentPlan.vehicles) {
+			if (vehicle.capacity() > highestCapacityVehicle.capacity()) {
+				highestCapacityVehicle = vehicle;
+				index = currentPlan.vehicles.indexOf(vehicle);
+			}
+		}
+
+		potentialNewPlan.plans.get(index).add(new PD_Action(true, task));
+		potentialNewPlan.plans.get(index).add(new PD_Action(false, task));
+
+		potentialNewPlan.taskLists.get(index).add(task);
+
+		var plan = internalPlan(vehicles, tempTasks, potentialNewPlan);
 		var cost = Helper.CalculateCostOfPlans(plan, vehicles);
 		var marginalCost = cost - currentCost;
 		potentialNewCost = cost;
+		System.out.println("Our agent marginal cost: " + marginalCost);
 		return Math.round(marginalCost);
 	}
 
-	public List<Plan> internalPlan (List<Vehicle> vehicles, List<Task> tasks) {
+	public List<Plan> internalPlan (List<Vehicle> vehicles, List<Task> tasks, Candidate currentPlan) {
 		System.out.println("Building internal plan...");
 
 		long time_start = System.currentTimeMillis();
 
 		// Begin SLS Algorithm
+
 
 		// create initial solution
 		Candidate A = Candidate.SelectInitialSolution(random, vehicles, tasks);
