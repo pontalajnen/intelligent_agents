@@ -55,6 +55,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.potentialNewCost = 0;
 		this.wonTasks = new ArrayList<>();
 		this.currentPlan = new Candidate(vehicles);
+		this.potentialNewPlan = new Candidate(vehicles);
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -81,7 +82,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			 wonTasks.add(previous);
 			 currentCost = potentialNewCost;
 			 currentPlan = potentialNewPlan;
-			 System.out.println("Our agent won the auction");
+			 System.out.println("Won the auction");
 		}
 	}
 	
@@ -109,24 +110,21 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		potentialNewPlan.taskLists.get(index).add(task);
 
-		var plan = internalPlan(vehicles, tempTasks, potentialNewPlan);
-		var cost = Helper.CalculateCostOfPlans(plan, vehicles);
+		potentialNewPlan = internalPlan(vehicles, tempTasks, potentialNewPlan);
+		var cost = potentialNewPlan.cost;
 		var marginalCost = cost - currentCost;
 		potentialNewCost = cost;
-		System.out.println("Our agent marginal cost: " + marginalCost);
+		System.out.println("Marginal cost: " + marginalCost);
 		return Math.round(marginalCost);
 	}
 
-	public List<Plan> internalPlan (List<Vehicle> vehicles, List<Task> tasks, Candidate currentPlan) {
-		System.out.println("Building internal plan...");
-
+	public Candidate internalPlan (List<Vehicle> vehicles, List<Task> tasks, Candidate candidate) {
 		long time_start = System.currentTimeMillis();
 
 		// Begin SLS Algorithm
 
-
 		// create initial solution
-		Candidate A = Candidate.SelectInitialSolution(random, vehicles, tasks);
+		Candidate A = candidate;
 
 		// Optimization loop - repeat until timeout
 		boolean timeout_reached = false;
@@ -148,92 +146,12 @@ public class AuctionTemplate implements AuctionBehavior {
 			}
 		}
 
-		// End SLS Algorithm
-
-		// Build plans for vehicles from the found solution
-		List<Plan> plan = PlanFromSolution(A);
-
-		// Informative outputs
-		long time_end = System.currentTimeMillis();
-		long duration = time_end - time_start;
-		double cost_plan  = A.cost;
-
-		System.out.println("The plan was generated in " + duration + " ms with a cost of " + A.cost);
-
-		return plan;
+		return A;
 	}
 
 	// Solve the optimization problem with the SLS algorithm
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-
-		System.out.println("Building plan...");
-
-		long time_start = System.currentTimeMillis();
-
-		// Begin SLS Algorithm
-
-		var taskList = new ArrayList<>(tasks);
-
-		// create initial solution
-		Candidate A = Candidate.SelectInitialSolution(random, vehicles, taskList);
-
-		// Optimization loop - repeat until timeout
-		boolean timeout_reached = false;
-
-		while(!timeout_reached)	{
-
-			// record old solution
-			Candidate A_old = A;
-
-			// generate neighbours
-			List<Candidate> N = A_old.ChooseNeighbours(random);
-
-			// Get the soluti.getTaskSet()on for the next iteration
-			A = LocalChoice(N, A_old);
-
-			// Check timeout condition
-			if( System.currentTimeMillis() - time_start > timeout_plan ) {
-				timeout_reached = true;
-			}
-		}
-
-		// End SLS Algorithm
-
-		// Build plans for vehicles from the found solution
-		List<Plan> plan = PlanFromSolution(A);
-
-		// Informative outputs
-		long time_end = System.currentTimeMillis();
-		long duration = time_end - time_start;
-		double cost_plan  = A.cost;
-
-		System.out.println("The plan was generated in " + duration + " ms with a cost of " + A.cost);
-
-		return plan;
-	}
-
-
-	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
-		City current = vehicle.getCurrentCity();
-		Plan plan = new Plan(current);
-
-		for (Task task : tasks) {
-			// move: current city => pickup location
-			for (City city : current.pathTo(task.pickupCity))
-				plan.appendMove(city);
-
-			plan.appendPickup(task);
-
-			// move: pickup location => delivery location
-			for (City city : task.path())
-				plan.appendMove(city);
-
-			plan.appendDelivery(task);
-
-			// set current city
-			current = task.deliveryCity;
-		}
-		return plan;
+		return PlanFromSolution(currentPlan);
 	}
 
 	// Local choice to choose the next solution from the neighbours and the current solution
