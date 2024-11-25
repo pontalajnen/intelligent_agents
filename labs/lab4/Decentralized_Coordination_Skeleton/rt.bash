@@ -19,3 +19,10 @@ java -jar ./logist/logist.jar -new $1 ./agents
 java -jar ./logist/logist.jar -run $1 ./config/auction.xml
 
 java -jar ./logist/logist.jar -score $1 scores.txt
+
+cd "tournament"
+cd "$1"
+cat "scores.txt"
+cd ..
+cd ..
+
