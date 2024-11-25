@@ -4,8 +4,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-cd "tournament"
-rm -rf *
+cd "tournament" && rm -rf *
 cd ..
 
 mv "out/artifacts/Decentralized_Coordination_Skeleton_jar/Decentralized_Coordination_Skeleton.jar" "agents/"
