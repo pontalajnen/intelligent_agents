@@ -33,11 +33,9 @@ public class AuctionTemplate implements AuctionBehavior {
 	private List<Vehicle> vehicles;
 	private long timeout_setup;
 	private long timeout_plan;
-	private List<Task> wonTasks;
 	private double currentCost;
 	private double potentialNewCost;
 	private Candidate currentPlan;
-	private Candidate potentialNewPlan;
 
 	private double p;
 
@@ -53,9 +51,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.p = 0.2;
 		this.currentCost = 0;
 		this.potentialNewCost = 0;
-		this.wonTasks = new ArrayList<>();
 		this.currentPlan = new Candidate(vehicles);
-		this.potentialNewPlan = new Candidate(vehicles);
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -79,9 +75,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		// We won the auction
 		if (winner == agent.id()){
-			 wonTasks.add(previous);
-			 currentCost = potentialNewCost;
-			 currentPlan = potentialNewPlan;
+			 currentPlan.addTask(previous);
 			 System.out.println("Won the auction");
 		}
 	}
@@ -91,40 +85,22 @@ public class AuctionTemplate implements AuctionBehavior {
 		if (!Helper.CanCarryTask(vehicles, task)){
 			return Long.MAX_VALUE;
 		}
+		var tempPlan = new Candidate(currentPlan);
+		tempPlan.addTask(task);
+		tempPlan = internalPlan(vehicles, tempPlan);
 
-		var tempTasks = new ArrayList<>(wonTasks);
-		tempTasks.add(task);
-		potentialNewPlan = new Candidate(vehicles, currentPlan.plans, currentPlan.taskLists, currentPlan.cost);
+		var marginalCost = tempPlan.cost - currentPlan.cost;
 
-		Vehicle highestCapacityVehicle = currentPlan.vehicles.get(0);
-		int index = 0;
-		for (Vehicle vehicle : currentPlan.vehicles) {
-			if (vehicle.capacity() > highestCapacityVehicle.capacity()) {
-				highestCapacityVehicle = vehicle;
-				index = currentPlan.vehicles.indexOf(vehicle);
-			}
-		}
-
-		potentialNewPlan.plans.get(index).add(new PD_Action(true, task));
-		potentialNewPlan.plans.get(index).add(new PD_Action(false, task));
-
-		potentialNewPlan.taskLists.get(index).add(task);
-
-		potentialNewPlan = internalPlan(vehicles, tempTasks, potentialNewPlan);
-		var cost = potentialNewPlan.cost;
-		var marginalCost = cost - currentCost;
-		potentialNewCost = cost;
-		System.out.println("Marginal cost: " + marginalCost);
 		return Math.round(marginalCost);
 	}
 
-	public Candidate internalPlan (List<Vehicle> vehicles, List<Task> tasks, Candidate candidate) {
+	public Candidate internalPlan (List<Vehicle> vehicles, Candidate candidate) {
 		long time_start = System.currentTimeMillis();
 
 		// Begin SLS Algorithm
 
 		// create initial solution
-		Candidate A = candidate;
+		Candidate A = new Candidate(candidate);
 
 		// Optimization loop - repeat until timeout
 		boolean timeout_reached = false;
@@ -151,7 +127,34 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	// Solve the optimization problem with the SLS algorithm
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		return PlanFromSolution(currentPlan);
+		currentPlan = internalPlan(vehicles, currentPlan);
+		var out = PlanFromSolution(currentPlan);
+		currentPlan = new Candidate(vehicles);
+		return out;
+	}
+
+
+	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
+		City current = vehicle.getCurrentCity();
+		Plan plan = new Plan(current);
+
+		for (Task task : tasks) {
+			// move: current city => pickup location
+			for (City city : current.pathTo(task.pickupCity))
+				plan.appendMove(city);
+
+			plan.appendPickup(task);
+
+			// move: pickup location => delivery location
+			for (City city : task.path())
+				plan.appendMove(city);
+
+			plan.appendDelivery(task);
+
+			// set current city
+			current = task.deliveryCity;
+		}
+		return plan;
 	}
 
 	// Local choice to choose the next solution from the neighbours and the current solution
