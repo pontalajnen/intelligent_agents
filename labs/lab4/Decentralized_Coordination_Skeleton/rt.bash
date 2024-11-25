@@ -7,7 +7,7 @@ fi
 cd "tournament" && rm -rf *
 cd ..
 
-mv "out/artifacts/Decentralized_Coordination_Skeleton_jar/Decentralized_Coordination_Skeleton.jar" "agents/"
+cp "out/artifacts/Decentralized_Coordination_Skeleton_jar/Decentralized_Coordination_Skeleton.jar" "agents/"
 cd "agents"
 rm "our_agent.jar"
 mv "Decentralized_Coordination_Skeleton.jar" "our_agent.jar"
