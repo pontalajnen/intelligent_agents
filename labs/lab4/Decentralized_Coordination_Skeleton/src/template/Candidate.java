@@ -282,10 +282,6 @@ private static double ComputeCost(Vehicle v, List<PD_Action> plan) {
 			cost = cost + current_city.distanceTo(act.task.deliveryCity) * v.costPerKm();
 			current_city = act.task.deliveryCity;
 		}
-		
-      
-       
-  
 	}
    
 	return cost;

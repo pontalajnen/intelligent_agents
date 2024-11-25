@@ -1,10 +1,8 @@
 package template;
 
 //the list of imports
-import java.io.Console;
 import java.util.*;
 
-import logist.Measures;
 import logist.behavior.AuctionBehavior;
 import logist.agent.Agent;
 import logist.simulation.Vehicle;
@@ -35,7 +33,11 @@ public class AuctionTemplate implements AuctionBehavior {
 	private long timeout_plan;
 	private double currentCost;
 	private double potentialNewCost;
-	private Candidate currentPlan;
+	private Candidate currentCandidate;
+	private int wonTasks;
+	private int totalTasksAuctioned;
+	private EncodedCandidate currentEncodedCandidate;
+	private EncodedCandidate potentialNextEncodedCandidate;
 
 	private double p;
 
@@ -51,7 +53,9 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.p = 0.2;
 		this.currentCost = 0;
 		this.potentialNewCost = 0;
-		this.currentPlan = new Candidate(vehicles);
+		this.currentCandidate = new Candidate(vehicles);
+		this.totalTasksAuctioned = 0;
+		this.wonTasks = 0;
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -74,9 +78,22 @@ public class AuctionTemplate implements AuctionBehavior {
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		// We won the auction
+
+		// Find opponent bid
+		long opponentBid = 0;
+		for (int i = 0; i < bids.length; i++) {
+			if (i != agent.id()) {
+				opponentBid = bids[i];
+			}
+		}
+
 		if (winner == agent.id()){
-			 currentPlan.addTask(previous);
-			 System.out.println("Won the auction");
+			 currentCandidate.addTask(previous);
+			 currentEncodedCandidate = potentialNextEncodedCandidate;
+			 System.out.println("Won the auction, Opponent bid " + opponentBid);
+		}
+		else {
+			System.out.println("Lost the auction, Opponent bid " + opponentBid);
 		}
 	}
 	
@@ -85,13 +102,19 @@ public class AuctionTemplate implements AuctionBehavior {
 		if (!Helper.CanCarryTask(vehicles, task)){
 			return Long.MAX_VALUE;
 		}
-		var tempPlan = new Candidate(currentPlan);
-		tempPlan.addTask(task);
-		tempPlan = internalPlan(vehicles, tempPlan);
+		var potentialNextCandidate = new Candidate(currentCandidate);
+		potentialNextCandidate.addTask(task);
+		potentialNextCandidate = internalPlan(vehicles, potentialNextCandidate);
 
-		var marginalCost = tempPlan.cost - currentPlan.cost;
+		var marginalCost = potentialNextCandidate.cost - currentCandidate.cost;
 
-		return Math.round(marginalCost);
+		System.out.println("Current cost: " + currentCandidate.cost);
+		System.out.println("Potential new cost: " + potentialNextCandidate.cost);
+		System.out.println("Marginal cost: " + marginalCost);
+
+		potentialNextEncodedCandidate = new EncodedCandidate(potentialNextCandidate);
+
+		return Math.max(0, Math.round(marginalCost));
 	}
 
 	public Candidate internalPlan (List<Vehicle> vehicles, Candidate candidate) {
@@ -127,35 +150,16 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	// Solve the optimization problem with the SLS algorithm
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		currentPlan = internalPlan(vehicles, currentPlan);
-		var out = PlanFromSolution(currentPlan);
-		currentPlan = new Candidate(vehicles);
-		return out;
-	}
 
-
-	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
-		City current = vehicle.getCurrentCity();
-		Plan plan = new Plan(current);
-
-		for (Task task : tasks) {
-			// move: current city => pickup location
-			for (City city : current.pathTo(task.pickupCity))
-				plan.appendMove(city);
-
-			plan.appendPickup(task);
-
-			// move: pickup location => delivery location
-			for (City city : task.path())
-				plan.appendMove(city);
-
-			plan.appendDelivery(task);
-
-			// set current city
-			current = task.deliveryCity;
+		if (currentEncodedCandidate == null){
+			return PlanFromSolution(internalPlan(vehicles, currentCandidate));
 		}
-		return plan;
+
+		var candidate = currentEncodedCandidate.getCandidate(currentCandidate);
+		return PlanFromSolution(candidate);
 	}
+
+
 
 	// Local choice to choose the next solution from the neighbours and the current solution
 	public Candidate LocalChoice(List<Candidate> N, Candidate A) {
