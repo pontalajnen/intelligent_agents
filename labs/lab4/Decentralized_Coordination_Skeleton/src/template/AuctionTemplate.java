@@ -1,9 +1,7 @@
 package template;
 
 //the list of imports
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import logist.Measures;
 import logist.behavior.AuctionBehavior;
@@ -34,7 +32,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private List<Vehicle> vehicles;
 	private long timeout_setup;
 	private long timeout_plan;
-	private List<PseudoTask> wonTasks;
+	private PseudoTaskSet wonTasks;
 	private double currentCost;
 	private double potentialNewCost;
 
@@ -55,7 +53,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.p = 0.2;
 		this.currentCost = 0;
 		this.potentialNewCost = 0;
-		this.wonTasks = new ArrayList<PseudoTask>();
+		this.wonTasks = new PseudoTaskSet();
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -79,9 +77,8 @@ public class AuctionTemplate implements AuctionBehavior {
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		// We won the auction
 		if (winner == agent.id()){
-			wonTasks.add(new PseudoTask(previous));
-				wonTasks.add(new PseudoTask(previous));
-			currentCost = potentialNewCost;
+			// wonTasks.add(previous);
+			// currentCost = potentialNewCost;
 		}
 	}
 	
@@ -91,21 +88,15 @@ public class AuctionTemplate implements AuctionBehavior {
 			return Long.MAX_VALUE;
 		}
 
-		var tempTasks = new ArrayList<PseudoTask>(wonTasks);
-		tempTasks.add(new PseudoTask(task));
+		// var tempPseudoTaskSet = new PseudoTaskSet(wonTasks.getTaskSet());
+		// tempPseudoTaskSet.add(task);
+		// var plans = plan(vehicles, tempPseudoTaskSet.getTaskSet());
 
-		Task[] tasks = new Task[tempTasks.size()];
-		for (int i = 0; i < tempTasks.size(); i++) {
-			tasks[i] = tempTasks.get(i).task;
-		}
+		// potentialNewCost = Helper.CalculateCostOfPlans(plans, vehicles);
+		// var marginalCost = potentialNewCost - currentCost;
 
-		var plans = plan(vehicles, TaskSet.create(tasks));
-
-		potentialNewCost = Helper.CalculateCostOfPlans(plans, vehicles);
-		var marginalCost = potentialNewCost - currentCost;
-
-		System.out.println("OUR AGENT: MARGINAL COST IS " + marginalCost);
-		return Math.round(marginalCost);
+		// System.out.println("OUR AGENT: MARGINAL COST IS " + marginalCost);
+		return 99L;
 	}
 
 	// Solve the optimization problem with the SLS algorithm
@@ -134,7 +125,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			// generate neighbours
 			List<Candidate> N = A_old.ChooseNeighbours(random);
 
-			// Get the solution for the next iteration
+			// Get the soluti.getTaskSet()on for the next iteration
 			A = LocalChoice(N, A_old);
 
 			// Check timeout condition
