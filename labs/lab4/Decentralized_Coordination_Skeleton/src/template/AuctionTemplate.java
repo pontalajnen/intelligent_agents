@@ -32,19 +32,16 @@ public class AuctionTemplate implements AuctionBehavior {
 	private List<Vehicle> vehicles;
 	private long timeout_setup;
 	private long timeout_plan;
-	private PseudoTaskSet wonTasks;
+	private List<Task> wonTasks;
 	private double currentCost;
 	private double potentialNewCost;
 
-
 	private double p;
-
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
 			Agent agent) {
 
-		Task[] emptyTaskArray = {};
 
 		this.topology = topology;
 		this.distribution = distribution;
@@ -53,7 +50,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.p = 0.2;
 		this.currentCost = 0;
 		this.potentialNewCost = 0;
-		this.wonTasks = new PseudoTaskSet();
+		this.wonTasks = new ArrayList<>();
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -77,8 +74,8 @@ public class AuctionTemplate implements AuctionBehavior {
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 		// We won the auction
 		if (winner == agent.id()){
-			// wonTasks.add(previous);
-			// currentCost = potentialNewCost;
+			 wonTasks.add(previous);
+			 currentCost = potentialNewCost;
 		}
 	}
 	
@@ -88,15 +85,58 @@ public class AuctionTemplate implements AuctionBehavior {
 			return Long.MAX_VALUE;
 		}
 
-		// var tempPseudoTaskSet = new PseudoTaskSet(wonTasks.getTaskSet());
-		// tempPseudoTaskSet.add(task);
-		// var plans = plan(vehicles, tempPseudoTaskSet.getTaskSet());
+		var tempTasks = new ArrayList<>(wonTasks);
+		tempTasks.add(task);
+		var plan = internalPlan(vehicles, tempTasks);
+		var cost = Helper.CalculateCostOfPlans(plan, vehicles);
+		var marginalCost = cost - currentCost;
+		potentialNewCost = cost;
+		return Math.round(marginalCost);
+	}
 
-		// potentialNewCost = Helper.CalculateCostOfPlans(plans, vehicles);
-		// var marginalCost = potentialNewCost - currentCost;
+	public List<Plan> internalPlan (List<Vehicle> vehicles, List<Task> tasks) {
+		System.out.println("Building internal plan...");
 
-		// System.out.println("OUR AGENT: MARGINAL COST IS " + marginalCost);
-		return 99L;
+		long time_start = System.currentTimeMillis();
+
+		// Begin SLS Algorithm
+
+		// create initial solution
+		Candidate A = Candidate.SelectInitialSolution(random, vehicles, tasks);
+
+		// Optimization loop - repeat until timeout
+		boolean timeout_reached = false;
+
+		while(!timeout_reached)	{
+
+			// record old solution
+			Candidate A_old = A;
+
+			// generate neighbours
+			List<Candidate> N = A_old.ChooseNeighbours(random);
+
+			// Get the soluti.getTaskSet()on for the next iteration
+			A = LocalChoice(N, A_old);
+
+			// Check timeout condition
+			if( System.currentTimeMillis() - time_start > timeout_plan ) {
+				timeout_reached = true;
+			}
+		}
+
+		// End SLS Algorithm
+
+		// Build plans for vehicles from the found solution
+		List<Plan> plan = PlanFromSolution(A);
+
+		// Informative outputs
+		long time_end = System.currentTimeMillis();
+		long duration = time_end - time_start;
+		double cost_plan  = A.cost;
+
+		System.out.println("The plan was generated in " + duration + " ms with a cost of " + A.cost);
+
+		return plan;
 	}
 
 	// Solve the optimization problem with the SLS algorithm
@@ -106,13 +146,12 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		long time_start = System.currentTimeMillis();
 
-		// Initialize list of tasks
-		List<Task> task_list = new ArrayList<>(tasks);
-
 		// Begin SLS Algorithm
 
+		var taskList = new ArrayList<>(tasks);
+
 		// create initial solution
-		Candidate A = Candidate.SelectInitialSolution(random, vehicles, task_list);
+		Candidate A = Candidate.SelectInitialSolution(random, vehicles, taskList);
 
 		// Optimization loop - repeat until timeout
 		boolean timeout_reached = false;
