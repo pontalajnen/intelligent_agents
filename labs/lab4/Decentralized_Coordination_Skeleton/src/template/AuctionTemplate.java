@@ -1,6 +1,7 @@
 package template;
 
 //the list of imports
+import java.awt.desktop.SystemSleepEvent;
 import java.util.*;
 
 import logist.behavior.AuctionBehavior;
@@ -39,6 +40,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private EncodedCandidate currentEncodedCandidate;
 	private EncodedCandidate potentialNextEncodedCandidate;
 
+
 	private double p;
 
 	@Override
@@ -56,6 +58,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.currentCandidate = new Candidate(vehicles);
 		this.totalTasksAuctioned = 0;
 		this.wonTasks = 0;
+
 
 		long seed = -9019554669489983951L;
 		this.random = new Random(seed);
@@ -89,7 +92,9 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		if (winner == agent.id()){
 			 currentCandidate.addTask(previous);
+			 currentCandidate = potentialNextEncodedCandidate.getCandidate(currentCandidate);
 			 currentEncodedCandidate = potentialNextEncodedCandidate;
+			 currentCost = potentialNewCost;
 			 System.out.println("Won the auction, Opponent bid " + opponentBid);
 		}
 		else {
@@ -105,12 +110,13 @@ public class AuctionTemplate implements AuctionBehavior {
 		var potentialNextCandidate = new Candidate(currentCandidate);
 		potentialNextCandidate.addTask(task);
 		potentialNextCandidate = internalPlan(vehicles, potentialNextCandidate);
+		potentialNewCost = potentialNextCandidate.cost;
 
-		var marginalCost = potentialNextCandidate.cost - currentCandidate.cost;
+		var marginalCost = potentialNewCost - currentCost;
 
-		System.out.println("Current cost: " + currentCandidate.cost);
-		System.out.println("Potential new cost: " + potentialNextCandidate.cost);
-		System.out.println("Marginal cost: " + marginalCost);
+		System.out.println("\nCurrent cost: " + currentCandidate.cost);
+		System.out.println("Potential new cost: " + potentialNewCost);
+		System.out.println("Marginal cost: " + marginalCost + "\n");
 
 		potentialNextEncodedCandidate = new EncodedCandidate(potentialNextCandidate);
 
@@ -151,11 +157,15 @@ public class AuctionTemplate implements AuctionBehavior {
 	// Solve the optimization problem with the SLS algorithm
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 
+		// We won 0 tasks
 		if (currentEncodedCandidate == null){
+			System.out.println("No encoding exists");
 			return PlanFromSolution(internalPlan(vehicles, currentCandidate));
 		}
 
+		System.out.println("Decoding candidate...");
 		var candidate = currentEncodedCandidate.getCandidate(currentCandidate);
+		System.out.println("Constructing solution...");
 		return PlanFromSolution(candidate);
 	}
 
@@ -166,7 +176,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		if (random.nextFloat() < p) {	// Return A with probability p
 			return A;
 		}
-		else {	// Return the best neightbour with probability 1-p
+		else {	// Return the best neighbour with probability 1-p
 
 			int best_cost_index = 0; // index of the neighbour with best cost until now
 			double best_cost = N.get(best_cost_index).cost; // cost of the neighbour with best cost until now

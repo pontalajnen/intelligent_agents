@@ -51,22 +51,20 @@ public class EncodedCandidate {
             var vehicleTaskList = new ArrayList<Task>();
             var vehiclePlan = new ArrayList<PD_Action>();
 
-            if(i < this.taskLists.size()){
-                for (var taskId : this.taskLists.get(i)){
-                    vehicleTaskList.add(taskLookup.get(taskId));
-                }
+            for (var taskId : this.taskLists.get(i)){
+                vehicleTaskList.add(taskLookup.get(taskId));
             }
 
-            if(i < this.plans.size()){
-                for (var encodedPlan : this.plans.get(i)){
-                    var pd_action = new PD_Action(
-                            encodedPlan.getIsPickup(),
-                            taskLookup.get(encodedPlan.getTaskId())
-                    );
-                    vehiclePlan.add(pd_action);
-                }
-
+            for (var encodedPlan : this.plans.get(i)){
+                var pd_action = new PD_Action(
+                        encodedPlan.getIsPickup(),
+                        taskLookup.get(encodedPlan.getTaskId())
+                );
+                vehiclePlan.add(pd_action);
             }
+            finalTaskLists.add(vehicleTaskList);
+            finalPlanLists.add(vehiclePlan);
+
         }
         return new Candidate(
                 this.vehicles,
