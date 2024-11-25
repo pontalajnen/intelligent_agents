@@ -20,7 +20,9 @@ java -jar ./logist/logist.jar -new $1 ./agents
 
 cd "tournament"
 cd $1
-sed -i.bak -e "15,18d" agents.xml
+sed -i.bak -e "19,22d" agents.xml
+rm agents.xml.bak
+sed -i.bak -e "7,10d" agents.xml
 rm agents.xml.bak
 cd ..
 cd ..
