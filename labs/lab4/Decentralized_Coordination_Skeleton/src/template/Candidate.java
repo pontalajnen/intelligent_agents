@@ -124,7 +124,7 @@ public class Candidate {
 
 	// HELPER FUNCTIONS
 
-	// Helper function for calculating the maximum of an array
+	// PlanHelper function for calculating the maximum of an array
 	public static int MaxIndex(double[] array) {
 		int max_ind = 0;
 		for (int index = 0; index < array.length; index++) {
