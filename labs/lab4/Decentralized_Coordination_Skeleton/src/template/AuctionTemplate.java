@@ -106,7 +106,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		potentialNextCandidate.addTask(task);
 		potentialNextCandidate = internalPlan(vehicles, potentialNextCandidate);
 		potentialNextCandidate.updateCost();
-		potentialNewCost = potentialNextCandidate.cost;
+		this.potentialNewCost = potentialNextCandidate.cost;
 
 		var marginalCost = potentialNewCost - currentCost;
 
