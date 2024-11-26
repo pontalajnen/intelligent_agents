@@ -4,3 +4,7 @@ labs/*/reactive/out
 .DS_Store
 .idea/
 labs/.DS_Store/
+labs/lab4/Decentralized_Coordination_Skeleton/tournament/*
+labs/lab4/Decentralized_Coordination_Skeleton/out/
+labs/lab4/Decentralized_Coordination_Skeleton/agents/our_agent.jar
+out/
