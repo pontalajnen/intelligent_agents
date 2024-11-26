@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<history configuration="./config/auction.xml">
+	<agents>
+		<agent name="our_agent">
+			<vehicle name="Vehicle 1"/>
+			<vehicle name="Vehicle 2"/>
+		</agent>
+		<agent name="random">
+			<vehicle name="Vehicle 3"/>
+			<vehicle name="Vehicle 4"/>
+		</agent>
+	</agents>
+	<rounds>
+		<round id="1">
+			<tasks>
+				<task id="0" pickup="Cardiff" delivery="Sheffield" weight="3" reward="69479">
+					<bid agent="our_agent" bid="2751"/>
+					<bid agent="random" bid="3415"/>
+				</task>
+				<task id="1" pickup="Manchester" delivery="Norwich" weight="3" reward="47516">
+					<bid agent="our_agent" bid="2108"/>
+					<bid agent="random" bid="3962"/>
+				</task>
+				<task id="2" pickup="Cardiff" delivery="Manchester" weight="3" reward="68638">
+					<bid agent="our_agent" bid="1607"/>
+					<bid agent="random" bid="3575"/>
+				</task>
+				<task id="3" pickup="Sheffield" delivery="Portsmouth" weight="3" reward="55553">
+					<bid agent="our_agent" bid="1554"/>
+					<bid agent="random" bid="3800"/>
+				</task>
+				<task id="4" pickup="Liverpool" delivery="Norwich" weight="3" reward="41305">
+					<bid agent="our_agent" bid="2429"/>
+					<bid agent="random" bid="4302"/>
+				</task>
+				<task id="5" pickup="Norwich" delivery="London" weight="3" reward="85625">
+					<bid agent="our_agent" bid="530"/>
+					<bid agent="random" bid="2658"/>
+				</task>
+			</tasks>
+			<events>
+				<event id="0" time="0" vehicle="Vehicle 1" move="Leeds"/>
+				<event id="1" time="0" vehicle="Vehicle 2" move="Norwich"/>
+				<event id="2" time="1094444388" vehicle="Vehicle 1" move="Sheffield"/>
+				<event id="3" time="1277777714" vehicle="Vehicle 2" pickup="5"/>
+				<event id="4" time="1553333256" vehicle="Vehicle 1" pickup="3"/>
+				<event id="5" time="1577777698" vehicle="Vehicle 2" move="London"/>
+				<event id="6" time="1853333241" vehicle="Vehicle 1" move="Birmingham"/>
+				<event id="7" time="2855555454" vehicle="Vehicle 2" deliver="5"/>
+				<event id="8" time="2855555455" vehicle="Vehicle 1" move="London"/>
+				<event id="9" time="3155555454" vehicle="Vehicle 2" move="Birmingham"/>
+				<event id="10" time="4166666565" vehicle="Vehicle 1" move="Portsmouth"/>
+				<event id="11" time="4466666564" vehicle="Vehicle 2" move="Manchester"/>
+				<event id="12" time="4997777675" vehicle="Vehicle 1" deliver="3"/>
+				<event id="13" time="5297777674" vehicle="Vehicle 1" move="London"/>
+				<event id="14" time="5521111007" vehicle="Vehicle 2" move="Liverpool"/>
+				<event id="15" time="5906666562" vehicle="Vehicle 2" pickup="4"/>
+				<event id="16" time="6128888784" vehicle="Vehicle 1" move="Birmingham"/>
+				<event id="17" time="6206666561" vehicle="Vehicle 2" move="Manchester"/>
+				<event id="18" time="6592222116" vehicle="Vehicle 2" move="Birmingham"/>
+				<event id="19" time="7439999893" vehicle="Vehicle 1" move="Cardiff"/>
+				<event id="20" time="7646666559" vehicle="Vehicle 2" move="Cardiff"/>
+				<event id="21" time="8717777670" vehicle="Vehicle 1" pickup="0"/>
+				<event id="22" time="8924444335" vehicle="Vehicle 2" pickup="2"/>
+				<event id="23" time="9017777670" vehicle="Vehicle 1" move="Birmingham"/>
+				<event id="24" time="9224444335" vehicle="Vehicle 2" move="Birmingham"/>
+				<event id="25" time="10295555446" vehicle="Vehicle 1" move="Sheffield"/>
+				<event id="26" time="10502222111" vehicle="Vehicle 2" move="Manchester"/>
+				<event id="27" time="11297777667" vehicle="Vehicle 1" deliver="0"/>
+				<event id="28" time="11556666555" vehicle="Vehicle 2" pickup="1"/>
+				<event id="29" time="11856666555" vehicle="Vehicle 2" deliver="2"/>
+				<event id="30" time="12156666554" vehicle="Vehicle 2" move="Birmingham"/>
+				<event id="31" time="13211110998" vehicle="Vehicle 2" move="London"/>
+				<event id="32" time="14522222107" vehicle="Vehicle 2" move="Norwich"/>
+				<event id="33" time="15799999884" vehicle="Vehicle 2" deliver="1"/>
+				<event id="34" time="16099999883" vehicle="Vehicle 2" deliver="4"/>
+			</events>
+		</round>
+	</rounds>
+	<statistics>
+		<stat rank="1" agent="our_agent">
+			<total-tasks value="6"/>
+			<total-distance value="2195.8"/>
+			<total-cost value="10979"/>
+			<total-reward value="10979"/>
+			<total-profit value="0"/>
+		</stat>
+		<stat rank="2" agent="random">
+			<total-tasks value="0"/>
+			<total-distance value="0.0"/>
+			<total-cost value="0"/>
+			<total-reward value="0"/>
+			<total-profit value="0"/>
+		</stat>
+	</statistics>
+</history>

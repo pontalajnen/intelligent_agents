@@ -1,6 +1,8 @@
 package template;
 
 import java.util.*;
+
+import logist.Measures;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology.City;
@@ -122,7 +124,7 @@ public class Candidate {
 
 	// HELPER FUNCTIONS
 
-	// Helper function for calculating the maximum of an array
+	// PlanHelper function for calculating the maximum of an array
 	public static int MaxIndex(double[] array) {
 		int max_ind = 0;
 		for (int index = 0; index < array.length; index++) {
@@ -154,10 +156,10 @@ public class Candidate {
 		City current_city = v.getCurrentCity();
 		for (PD_Action act : plan) {
 			if (act.is_pickup) {
-				cost += current_city.distanceTo(act.task.pickupCity) * v.costPerKm();
+				cost += Measures.unitsToKM(current_city.distanceUnitsTo(act.task.pickupCity)) * v.costPerKm();
 				current_city = act.task.pickupCity;
 			} else {
-				cost += current_city.distanceTo(act.task.deliveryCity) * v.costPerKm();
+				cost += Measures.unitsToKM(current_city.distanceUnitsTo(act.task.deliveryCity)) * v.costPerKm();
 				current_city = act.task.deliveryCity;
 			}
 		}
