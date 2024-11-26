@@ -4,6 +4,7 @@ import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology;
+import logist.topology.Topology.City;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,8 @@ public class PlanHelper {
         this.timeout = timeout;
         this.p = 0.1;
     }
+
+
     public boolean canCarryTask(Task task){
         for(var vehicle: vehicles){
             if (vehicle.capacity() >= task.weight){
@@ -33,107 +36,82 @@ public class PlanHelper {
         return false;
     }
 
+
     public Candidate computePlan (Candidate candidate, double timeout_frac) {
         long time_start = System.currentTimeMillis();
 
-        Candidate A = new Candidate(candidate);
+        Candidate newCandidate = new Candidate(candidate);
 
         boolean noTasks = true;
 
-        for (var taskList : A.taskLists) {
+        for (var taskList : newCandidate.taskLists) {
             if (!taskList.isEmpty()) {
                 noTasks = false;
                 break;
             }
         }
 
-        if (noTasks) return A;
+        if (noTasks) return newCandidate;
 
-        boolean timeout_reached = false;
-
-        while(!timeout_reached)	{
-
-            Candidate A_old = A;
-
-            List<Candidate> N = A_old.ChooseNeighbours(random);
-
-            A = LocalChoice(N, A_old);
-
-            if( System.currentTimeMillis() - time_start > timeout_frac * timeout) {
-                timeout_reached = true;
-            }
+        while(System.currentTimeMillis() - time_start > timeout_frac * timeout)	{
+            Candidate oldCandidate = newCandidate;
+            List<Candidate> candidateList = oldCandidate.ChooseNeighbours(random);
+            newCandidate = LocalChoice(candidateList, oldCandidate);
         }
 
-        return A;
+        return newCandidate;
     }
-    public Candidate LocalChoice(List<Candidate> N, Candidate A) {
-        if (random.nextFloat() < p) {	// Return A with probability p
-            return A;
-        }
-        else {	// Return the best neighbour with probability 1-p
 
-            int best_cost_index = 0; // index of the neighbour with best cost until now
-            double best_cost = N.get(best_cost_index).cost; // cost of the neighbour with best cost until now
 
-            for (int n_ind = 1; n_ind < N.size(); n_ind++ ) {
-                // check if current alternative has lower cost than the current best
-                if( N.get(n_ind).cost < best_cost )	{
-                    // if so, update the best solution
-                    best_cost_index = n_ind;
-                    best_cost = N.get(best_cost_index).cost;
+    public Candidate LocalChoice(List<Candidate> candidateList, Candidate candidate) {
+        if (random.nextFloat() < p) {
+            return candidate;
+        } else {
+            int bestCostIndex = 0;
+            double bestCost = candidateList.get(bestCostIndex).cost;
+
+            for (int candidateIndex = 1; candidateIndex < candidateList.size(); candidateIndex++) {
+                if(candidateList.get(candidateIndex).cost < bestCost) {
+                    bestCostIndex = candidateIndex;
+                    bestCost = candidateList.get(bestCostIndex).cost;
                 }
             }
 
-            // return the best solution
-            return N.get(best_cost_index);
+            return candidateList.get(bestCostIndex);
         }
     }
 
-    // Build the plan for logist platform from the candidate solution
-    public List<Plan> planFromSolution(Candidate A) {
 
+    public List<Plan> planFromSolution(Candidate candidate) {
+        List<Plan> planList = new ArrayList<>();
 
-        List<Plan> plan_list = new ArrayList<>();	// create empty list of plans
+        for (int vehicleIndex = 0; vehicleIndex < candidate.vehicles.size(); vehicleIndex++) {
 
-        // Build plan for each vehicle
-        for (int vehicle_ind = 0; vehicle_ind < A.vehicles.size(); vehicle_ind++) {
+            Vehicle vehicle = candidate.vehicles.get(vehicleIndex);
 
-            Vehicle v = A.vehicles.get(vehicle_ind);
+            List<PD_Action> plan = candidate.plans.get(vehicleIndex);
 
-            // get constructed plan of the vehicle
-            List<PD_Action> plan = A.plans.get(vehicle_ind);
+            City currentCity = vehicle.getCurrentCity();
+            Plan vechiclePlan = new Plan(currentCity);
 
-            // follow vehicle cities to construct plan
-            Topology.City current_city = v.getCurrentCity();
-            Plan v_plan = new Plan(current_city);
-
-            // Append required primitive actions for each pickup/delivery action
             for (PD_Action act : plan) {
 
-                Topology.City next_city;
-                if(act.is_pickup) {
-                    next_city = act.task.pickupCity;
-                }
-                else {
-                    next_city = act.task.deliveryCity;
+                Task task = act.task;
+                City nextCity = act.is_pickup ? task.pickupCity : task.deliveryCity;
+
+                for(City move_city : currentCity.pathTo(nextCity)) {
+                    vechiclePlan.appendMove(move_city);
                 }
 
-                // Append move actions
-                for(Topology.City move_city : current_city.pathTo(next_city)) {
-                    v_plan.appendMove(move_city);
-                }
-                // Append pickup-delivery actions
                 if (act.is_pickup) {
-                    v_plan.appendPickup(act.task);
+                    vechiclePlan.appendPickup(task);
                 } else {
-                    v_plan.appendDelivery(act.task);
+                    vechiclePlan.appendDelivery(task);
                 }
-                current_city = next_city;
+                currentCity = nextCity;
             }
-
-            // add plan to the list of plans
-            plan_list.add(v_plan);
+            planList.add(vechiclePlan);
         }
-        return plan_list;
+        return planList;
     }
 }

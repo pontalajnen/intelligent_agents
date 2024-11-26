@@ -19,7 +19,7 @@ public class EncodedCandidate {
 
         for (var plan : candidate.plans){
             List<EncodedAction> vehiclePlan = new ArrayList<>();
-            for (var pdAction: plan){
+            for (var pdAction : plan){
                 var encodedAction = new EncodedAction(pdAction);
                 vehiclePlan.add(encodedAction);
             }

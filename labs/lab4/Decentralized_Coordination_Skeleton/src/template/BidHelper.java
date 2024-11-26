@@ -14,7 +14,7 @@ public class BidHelper {
         this.task = task;
     }
 
-    public long bid() {
+    public long bid(long negativeBid) {
         double ourMarginalCost = ourAgent.calculateMarginalCost(task, 0.4);
         double theirMarginalCost = theirAgent.calculateMarginalCost(task, 0.4);
         int totalTasksAuctioned = getTotalTasksAuctioned(ourAgent, theirAgent);
@@ -23,7 +23,11 @@ public class BidHelper {
         System.out.println("Our agent cost: " + ourMarginalCost);;
         System.out.println("Their agent cost: " + theirMarginalCost + "\n");
 
-        return Math.max(0, Math.round(ourMarginalCost));
+        long loss = 100;
+        long finalBid = Math.max(0, Math.round(ourMarginalCost));
+        finalBid = negativeBid == 0 ? finalBid : finalBid - loss;
+
+        return finalBid;
     }
 
     private int getTotalTasksAuctioned(AgentState ourAgent, AgentState theirAgent) {

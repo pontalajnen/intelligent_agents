@@ -26,6 +26,7 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	private AgentState ourAgent;
 	private AgentState theirAgent;
+	private long negativeBid;
 
 
 	private double p;
@@ -38,6 +39,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.distribution = distribution;
 		this.agent = agent;
 		this.vehicles = agent.vehicles();
+		this.negativeBid = 3;
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -85,7 +87,9 @@ public class AuctionTemplate implements AuctionBehavior {
 	@Override
 	public Long askPrice(Task task) {
 		var bidHelper = new BidHelper(ourAgent, theirAgent, task);
-		return bidHelper.bid();
+		Long bid = bidHelper.bid(negativeBid);
+		negativeBid = negativeBid != 0 ? negativeBid - 1 : negativeBid;
+		return bid;
 	}
 
 	// Solve the optimization problem with the SLS algorithm
