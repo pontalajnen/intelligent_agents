@@ -52,7 +52,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.distribution = distribution;
 		this.agent = agent;
 		this.vehicles = agent.vehicles();
-		this.p = 0.2;
+		this.p = 0.1;
 		this.currentCost = 0;
 		this.potentialNewCost = 0;
 		this.currentCandidate = new Candidate(vehicles);
@@ -93,7 +93,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		if (winner == agent.id()){
 			 currentCandidate.addTask(previous);
 			 currentCandidate = potentialNextEncodedCandidate.getCandidate(currentCandidate);
-			 currentEncodedCandidate = potentialNextEncodedCandidate;
+			 currentEncodedCandidate = new EncodedCandidate(potentialNextEncodedCandidate);
 			 currentCost = potentialNewCost;
 			 System.out.println("Won the auction, Opponent bid " + opponentBid);
 		}
@@ -154,7 +154,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			// generate neighbours
 			List<Candidate> N = A_old.ChooseNeighbours(random);
 
-			// Get the soluti.getTaskSet()on for the next iteration
+			// Get the solution.getTaskSet()on for the next iteration
 			A = LocalChoice(N, A_old);
 
 			// Check timeout condition
