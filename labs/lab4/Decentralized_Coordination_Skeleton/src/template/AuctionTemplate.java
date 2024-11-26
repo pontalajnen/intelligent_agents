@@ -131,6 +131,18 @@ public class AuctionTemplate implements AuctionBehavior {
 		// create initial solution
 		Candidate A = new Candidate(candidate);
 
+		boolean noTasks = true;
+
+		for (var taskList : A.taskLists) {
+			if (!taskList.isEmpty()) {
+				noTasks = false;
+				break;
+			}
+		}
+
+		if (noTasks)
+			return A;
+
 		// Optimization loop - repeat until timeout
 		boolean timeout_reached = false;
 
