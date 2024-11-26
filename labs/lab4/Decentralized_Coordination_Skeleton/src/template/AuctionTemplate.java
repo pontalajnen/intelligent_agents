@@ -17,11 +17,6 @@ import logist.LogistSettings;
 import java.io.File;
 import logist.config.Parsers;
 
-/**
- * A very simple auction agent that assigns all tasks to its first vehicle and
- * handles them sequentially.
- * 
- */
 @SuppressWarnings("unused")
 public class AuctionTemplate implements AuctionBehavior {
 
@@ -110,6 +105,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		var potentialNextCandidate = new Candidate(currentCandidate);
 		potentialNextCandidate.addTask(task);
 		potentialNextCandidate = internalPlan(vehicles, potentialNextCandidate);
+		potentialNextCandidate.updateCost();
 		potentialNewCost = potentialNextCandidate.cost;
 
 		var marginalCost = potentialNewCost - currentCost;

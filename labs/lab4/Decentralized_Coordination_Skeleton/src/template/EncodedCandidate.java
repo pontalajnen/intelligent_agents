@@ -37,11 +37,11 @@ public class EncodedCandidate {
 
     public EncodedCandidate (EncodedCandidate candidate){
         this.vehicles = new ArrayList<>(candidate.vehicles);
-        this.taskLists = new ArrayList<>();
-        this.plans = new ArrayList<>();
+        this.taskLists = new ArrayList<>(vehicles.size());
+        this.plans = new ArrayList<>(vehicles.size());
 
-        for (var taskList : taskLists){
-            taskLists.add(taskList);
+        for (var taskList : candidate.taskLists){
+            this.taskLists.add(taskList);
         }
 
         for(var plan : candidate.plans){
@@ -49,6 +49,22 @@ public class EncodedCandidate {
         }
 
         this.cost = candidate.cost;
+    }
+
+    public List<Vehicle> getVehicles() {
+        return vehicles;
+    }
+
+    public List<List<EncodedAction>> getPlans() {
+        return plans;
+    }
+
+    public List<List<Integer>> getTaskLists() {
+        return taskLists;
+    }
+
+    public Double getCost() {
+        return cost;
     }
 
     public Candidate getCandidate(Candidate candidate){
@@ -89,5 +105,4 @@ public class EncodedCandidate {
                 this.cost
         );
     }
-
 }
