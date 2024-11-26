@@ -89,8 +89,9 @@ public class AuctionTemplate implements AuctionBehavior {
 			 currentCandidate.addTask(previous);
 			 currentCandidate = potentialNextEncodedCandidate.getCandidate(currentCandidate);
 			 currentEncodedCandidate = new EncodedCandidate(potentialNextEncodedCandidate);
-			 currentCost = potentialNewCost;
+			 this.currentCost = potentialNewCost;
 			 System.out.println("Won the auction, Opponent bid " + opponentBid);
+			 System.out.println("Current cost: " + currentCost);
 		}
 		else {
 			System.out.println("Lost the auction, Opponent bid " + opponentBid);
@@ -172,8 +173,10 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		System.out.println("Decoding candidate...");
 		var candidate = currentEncodedCandidate.getCandidate(currentCandidate);
+		System.out.println("Final candidate cost: " + candidate.cost);
 		System.out.println("Constructing solution...");
-		return PlanFromSolution(candidate);
+		var out = PlanFromSolution(candidate);
+		return out;
 	}
 
 
