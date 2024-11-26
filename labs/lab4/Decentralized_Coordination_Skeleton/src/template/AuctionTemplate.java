@@ -140,8 +140,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			}
 		}
 
-		if (noTasks)
-			return A;
+		if (noTasks) return A;
 
 		// Optimization loop - repeat until timeout
 		boolean timeout_reached = false;
