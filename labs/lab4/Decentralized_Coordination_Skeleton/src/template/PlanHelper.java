@@ -53,7 +53,8 @@ public class PlanHelper {
 
         if (noTasks) return newCandidate;
 
-        while(System.currentTimeMillis() - time_start > timeout_frac * timeout)	{
+
+        while(System.currentTimeMillis() - time_start < timeout_frac * timeout)	{
             Candidate oldCandidate = newCandidate;
             List<Candidate> candidateList = oldCandidate.ChooseNeighbours(random);
             newCandidate = LocalChoice(candidateList, oldCandidate);

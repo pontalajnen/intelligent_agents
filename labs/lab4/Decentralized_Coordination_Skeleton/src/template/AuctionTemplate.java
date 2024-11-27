@@ -7,6 +7,7 @@ import logist.behavior.AuctionBehavior;
 import logist.agent.Agent;
 import logist.simulation.Vehicle;
 import logist.plan.Plan;
+import logist.task.DefaultTaskDistribution;
 import logist.task.Task;
 import logist.task.TaskDistribution;
 import logist.task.TaskSet;
@@ -19,27 +20,26 @@ import logist.config.Parsers;
 public class AuctionTemplate implements AuctionBehavior {
 
 	private Topology topology;
-	private TaskDistribution distribution;
+	private DefaultTaskDistribution taskDistribution;
 	private Agent agent;
 	private List<Vehicle> vehicles;
 	private long timeout_setup;
 
 	private AgentState ourAgent;
 	private AgentState theirAgent;
-	private long negativeBid;
-
 
 	private double p;
+
+	private double futureDiscount = 0.15;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
 			Agent agent) {
 
 		this.topology = topology;
-		this.distribution = distribution;
+		this.taskDistribution = (DefaultTaskDistribution) distribution;
 		this.agent = agent;
 		this.vehicles = agent.vehicles();
-		this.negativeBid = 3;
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -74,22 +74,66 @@ public class AuctionTemplate implements AuctionBehavior {
 		}
 
 		if (winner == agent.id()){
-			 ourAgent.updateCandidate(previous);
+			 ourAgent.updateCandidate(previous, bids[agent.id()]);
 			 System.out.println("Won the auction, Opponent bid " + opponentBid);
 			 System.out.println("Current cost: " + ourAgent.getCost());
 		}
 		else {
-			theirAgent.updateCandidate(previous);
+			theirAgent.updateCandidate(previous, bids[agent.id()]);
 			System.out.println("Lost the auction, Opponent bid " + opponentBid);
 		}
+		System.out.println("Our profit: " + ourAgent.getProfit());
+		System.out.println("Their profit: " + theirAgent.getProfit());
 	}
 	
 	@Override
 	public Long askPrice(Task task) {
-		var bidHelper = new BidHelper(ourAgent, theirAgent, task);
-		Long bid = bidHelper.bid(negativeBid);
-		negativeBid = negativeBid != 0 ? negativeBid - 1 : negativeBid;
-		return bid;
+		int highestCapacity = 0;
+		for(var vehicle : vehicles){
+			if (vehicle.capacity() > highestCapacity){
+				highestCapacity = vehicle.capacity();
+			}
+		}
+		if (task.weight > highestCapacity) return Long.MAX_VALUE;
+
+		double ourMarginalCost = ourAgent.calculateMarginalCost(task, 0.25);
+		double theirMarginalCost = theirAgent.calculateMarginalCost(task, 0.25);
+		int totalTasksAuctioned = ourAgent.getWonTasks() + theirAgent.getWonTasks();
+
+		double ourFutureSavings = BidHelper.computeFutureSavings(
+				task, ourAgent, taskDistribution, 0.25
+		);
+		double theirFutureSavings = BidHelper.computeFutureSavings(
+				task, theirAgent, taskDistribution, 0.25
+		);
+
+		double ourLowestBid = ourMarginalCost + futureDiscount * ourFutureSavings;
+		double theirLowestBid = theirMarginalCost+ futureDiscount * theirFutureSavings;
+
+		System.out.println("\nBidding round " + (totalTasksAuctioned + 1) + ":");
+		System.out.println("Our lowest bid: " + ourLowestBid);
+		System.out.println("Their lowest bid: " + theirLowestBid);
+
+		double bid = 0;
+
+		if(ourLowestBid < theirLowestBid){
+			long eps = Math.round(((theirLowestBid - ourLowestBid) / 5) * 4);
+			bid = Math.max(0, Math.round(ourLowestBid) + eps);
+		}
+		else if(ourLowestBid > theirLowestBid){
+			if (totalTasksAuctioned < 3){
+				bid = Math.max(ourLowestBid - 500, theirLowestBid - 100);
+			}
+			else{
+				bid = ourLowestBid;
+			}
+		}
+		else{
+			bid = ourLowestBid;
+		}
+		System.out.println("Our bid: " + bid);
+
+		return Math.max(0, Math.round(bid));
 	}
 
 	// Solve the optimization problem with the SLS algorithm

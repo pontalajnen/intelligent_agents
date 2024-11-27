@@ -1,9 +1,13 @@
 package template;
 
+import logist.agent.Agent;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
+import logist.task.DefaultTaskDistribution;
 import logist.task.Task;
+import logist.task.TaskDistribution;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AgentState {
@@ -16,27 +20,91 @@ public class AgentState {
     private double currentCost;
     private double potentialNextCost;
 
+    private long totalBid;
+
+
     public AgentState(List<Vehicle> vehicleList, long timeout) {
         this.wonTasks = 0;
         this.candidate = new Candidate(vehicleList);
         this.planHelper = new PlanHelper(vehicleList, timeout);
+        this.totalBid = 0L;
+    }
 
+    public AgentState(AgentState agentState) {
+        this.wonTasks = agentState.getWonTasks();
+        this.currentEncodedCandidate = agentState.getCurrentEncodedCandidate();
+        this.potentialNextEncodedCandidate = agentState.getPotentialNextEncodedCandidate();
+        this.candidate = agentState.getCandidate();
+        this.planHelper = agentState.getPlanHelper();
+        this.currentCost = agentState.getCurrentCost();
+        this.potentialNextCost = agentState.getPotentialNextCost();
+        this.totalBid = agentState.getTotalBid();
+    }
+
+    public long getProfit(){
+        return getTotalBid() - Math.round(candidate.cost);
     }
 
     public double getCost(){
         return currentCost;
     }
+
+    public long getTotalBid(){
+        return totalBid;
+    }
+
+    public double getPotentialNextCost() {
+        return potentialNextCost;
+    }
+
+    public double getCurrentCost() {
+        return currentCost;
+    }
+
+    public PlanHelper getPlanHelper() {
+        return planHelper;
+    }
+
+    public Candidate getCandidate() {
+        return candidate;
+    }
+
+    public EncodedCandidate getPotentialNextEncodedCandidate() {
+        return potentialNextEncodedCandidate;
+    }
+
+    public EncodedCandidate getCurrentEncodedCandidate() {
+        return currentEncodedCandidate;
+    }
+
     public int getWonTasks(){
         return wonTasks;
     }
 
-    public void updateCandidate(Task task){
+    public void updateCandidate(Task task, Long bid){
         wonTasks++;
         candidate.addTask(task);
         candidate = potentialNextEncodedCandidate.getCandidate(candidate);
         currentEncodedCandidate = new EncodedCandidate(potentialNextEncodedCandidate);
         currentCost = potentialNextCost;
+        totalBid += bid;
     }
+
+    public double computeMarginalCostMultipleTasks(Task currentTask, List<Task> tasks, double timeout_frac){
+        var futureCandidate = new Candidate(candidate);
+        for(var task : tasks){
+            futureCandidate.addTask(task);
+        }
+        futureCandidate = planHelper.computePlan(futureCandidate, timeout_frac * 3 / 4);
+        futureCandidate.updateCost();
+        double loseCost = futureCandidate.cost;
+        futureCandidate.addTask(currentTask);
+        futureCandidate = planHelper.computePlan(futureCandidate, timeout_frac * 1 / 4);
+        futureCandidate.updateCost();
+
+        return futureCandidate.cost - loseCost; // This will be negative
+    }
+
 
     public double calculateMarginalCost(Task task, double timeout_frac){
         calculateNextPotentialCandidate(task, timeout_frac);

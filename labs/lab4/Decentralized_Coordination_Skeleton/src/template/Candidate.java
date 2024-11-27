@@ -7,13 +7,13 @@ import logist.simulation.Vehicle;
 import logist.task.Task;
 import logist.topology.Topology.City;
 
-
+// The Candidate class holds a conceptual candidate solution and methods associated with it.
 public class Candidate {
 
-	public Double cost;
-	public List<Vehicle> vehicles;
-	public List<List<PD_Action>> plans;
-	public List<List<Task>> taskLists;
+	public Double cost; // cost of the plan
+	public List<Vehicle> vehicles; // list of vehicles
+	public List<List<PD_Action>> plans; // lists of plans for each vehicle
+	public List<List<Task>> taskLists; // lists of tasks for each vehicle
 
 	public Candidate(List<Vehicle> vehicles, List<List<PD_Action>> plans, List<List<Task>> taskLists, Double cost) {
 		this.vehicles = vehicles;
@@ -23,9 +23,10 @@ public class Candidate {
 	}
 
 	public Candidate(List<Vehicle> vehicles) {
+		// Initialise plans and tasks variables
 		List<List<PD_Action>> plans = new ArrayList<>();
 		List<List<Task>> taskLists = new ArrayList<>();
-
+		// initialize plans and task list
 		for (int i = 0; i < vehicles.size(); i++) {
 			plans.add(new ArrayList<>());
 			taskLists.add(new ArrayList<>());
@@ -52,27 +53,32 @@ public class Candidate {
 		}
 	}
 
+	// MAIN OPERATIONS: Choose neighbours, select initial solution
+
+	// Function that generates neighbours
 	public List<Candidate> ChooseNeighbours(Random random) {
 		List<Candidate> neighs = new ArrayList<>(); // List to hold generated neighbours
-		int numVehicles = vehicles.size();
+		int num_vehicles = vehicles.size();
 
-		for (int vehicleId = 0; vehicleId < numVehicles; vehicleId++) {
-			List<Task> vehicle_tasks = taskLists.get(vehicleId); // Get tasks of the vehicle
-			if (vehicle_tasks.isEmpty()) {
+		// 1 - GENERATE NEIGHBOURS BY CHANGING VEHICLES OF TASKS
+		for (int vid_i = 0; vid_i < num_vehicles; vid_i++) {
+			List<Task> vehicle_tasks = taskLists.get(vid_i); // Get tasks of the vehicle
+			if (vehicle_tasks.size() == 0) {
 				continue;
 			}
 
 			int task_id = 0;
 			double task_weight = vehicle_tasks.get(task_id).weight; // Get task weight
-			int vid_j = random.nextInt(numVehicles);
-			while (vehicleId == vid_j || vehicles.get(vid_j).capacity() < task_weight) {
-				vid_j = random.nextInt(numVehicles);
+			int vid_j = random.nextInt(num_vehicles);
+			while (vid_i == vid_j || vehicles.get(vid_j).capacity() < task_weight) {
+				vid_j = random.nextInt(num_vehicles);
 			}
 
-			neighs.add(ChangingVehicle(random, task_id, vehicleId, vid_j));
+			neighs.add(ChangingVehicle(random, task_id, vid_i, vid_j));
 		}
 
-		for (int vid_i = 0; vid_i < numVehicles; vid_i++) {
+		// 2 - GENERATE NEIGHBOURS BY CHANGING TASK ORDERS
+		for (int vid_i = 0; vid_i < num_vehicles; vid_i++) {
 			List<Task> vehicle_tasks = taskLists.get(vid_i); // Get tasks of the vehicle
 			if (vehicle_tasks.size() < 2) {
 				continue;
@@ -85,6 +91,7 @@ public class Candidate {
 		return neighs;
 	}
 
+	// Create initial candidate solution: All tasks assigned to the largest vehicle
 	public static Candidate SelectInitialSolution(Random random, List<Vehicle> vehicles, List<Task> tasks) {
 		int num_vehicles = vehicles.size();
 		List<List<PD_Action>> plans = new ArrayList<>();
@@ -143,6 +150,7 @@ public class Candidate {
 		return true;
 	}
 
+	// Function to compute the cost of individual vehicles
 	private static double ComputeCost(Vehicle v, List<PD_Action> plan) {
 		double cost = 0.0;
 		City current_city = v.getCurrentCity();
@@ -158,7 +166,9 @@ public class Candidate {
 		return cost;
 	}
 
+	// VEHICLE AND TASK ORDER CHANGE OPERATORS
 
+	// Function to change the vehicle of a given task
 	public Candidate ChangingVehicle(Random random, int task_id, int vid_i, int vid_j) {
 		Vehicle v_i = vehicles.get(vid_i);
 		Vehicle v_j = vehicles.get(vid_j);
@@ -225,20 +235,28 @@ public class Candidate {
 		}
 
 		int vehicle_capacity = v_i.capacity();
-		int pickupLocation = 0;
+		int pickup_location = 0;
 		List<PD_Action> candidate_plan_pickup = new ArrayList<>(i_plan_new);
-		while (!SatisfiesWeightConstraints(candidate_plan_pickup, vehicle_capacity)) {
-			pickupLocation = random.nextInt(i_plan_new.size());
+		boolean done = false;
+		while (!done) {
+			pickup_location = random.nextInt(i_plan_new.size());
 			candidate_plan_pickup = new ArrayList<>(i_plan_new);
-			candidate_plan_pickup.add(pickupLocation, new PD_Action(true, t));
+			candidate_plan_pickup.add(pickup_location, new PD_Action(true, t));
+			if (SatisfiesWeightConstraints(candidate_plan_pickup, vehicle_capacity)) {
+				done = true;
+			}
 		}
 
 		List<PD_Action> candidate_plan_delivery = new ArrayList<>(candidate_plan_pickup);
-		while (!SatisfiesWeightConstraints(candidate_plan_delivery, vehicle_capacity)) {
-			int delivery_location_offset = random.nextInt(i_plan_new.size() - pickupLocation);
-			int delivery_location = pickupLocation + 1 + delivery_location_offset;
+		done = false;
+		while (!done) {
+			int delivery_location_offset = random.nextInt(i_plan_new.size() - pickup_location);
+			int delivery_location = pickup_location + 1 + delivery_location_offset;
 			candidate_plan_delivery = new ArrayList<>(candidate_plan_pickup);
 			candidate_plan_delivery.add(delivery_location, new PD_Action(false, t));
+			if (SatisfiesWeightConstraints(candidate_plan_delivery, vehicle_capacity)) {
+				done = true;
+			}
 		}
 
 		i_plan_new = new ArrayList<>(candidate_plan_delivery);
@@ -251,7 +269,6 @@ public class Candidate {
 
 		return new Candidate(vehicles, updated_plans, taskLists, updated_cost);
 	}
-
 
 	public void addTask(Task t) {
 		double[] vehicle_capacities = new double[vehicles.size()];
@@ -268,8 +285,6 @@ public class Candidate {
 
 		this.cost = new_cost;
 	}
-
-
 	public void updateCost(){
 		Double newCost = 0.0;
 		for(var i = 0; i < vehicles.size(); i++){
