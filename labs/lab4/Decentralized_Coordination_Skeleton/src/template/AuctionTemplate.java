@@ -30,7 +30,7 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	private double p;
 
-	private double futureDiscount = 0.15;
+	private double futureDiscount = 0.0;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -121,8 +121,8 @@ public class AuctionTemplate implements AuctionBehavior {
 			bid = Math.max(0, Math.round(ourLowestBid) + eps);
 		}
 		else if(ourLowestBid > theirLowestBid){
-			if (totalTasksAuctioned < 3){
-				bid = Math.max(ourLowestBid - 500, theirLowestBid - 100);
+			if (ourAgent.getWonTasks() < 3){
+				bid = Math.max(ourLowestBid - 300, theirLowestBid - 100);
 			}
 			else{
 				bid = ourLowestBid;

@@ -16,7 +16,7 @@ cd ..
 # Create the tournament
 java -jar ./logist/logist.jar -new $1 ./agents
 
-java -jar ./logist/logist.jar -run $1 ./config/auction.xml
+java -jar ./logist/logist.jar -run $1 ./config/auction2.xml
 
 java -jar ./logist/logist.jar -score $1 scores.txt
 
