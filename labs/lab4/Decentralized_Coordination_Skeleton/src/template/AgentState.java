@@ -21,6 +21,7 @@ public class AgentState {
     private double potentialNextCost;
 
     private long totalBid;
+    private long lowestBid;
 
 
     public AgentState(List<Vehicle> vehicleList, long timeout) {
@@ -28,6 +29,7 @@ public class AgentState {
         this.candidate = new Candidate(vehicleList);
         this.planHelper = new PlanHelper(vehicleList, timeout);
         this.totalBid = 0L;
+        this.lowestBid = 0;
     }
 
     public AgentState(AgentState agentState) {
@@ -39,6 +41,11 @@ public class AgentState {
         this.currentCost = agentState.getCurrentCost();
         this.potentialNextCost = agentState.getPotentialNextCost();
         this.totalBid = agentState.getTotalBid();
+        this.lowestBid = agentState.getLowestBid();
+    }
+
+    public long getLowestBid() {
+        return lowestBid;
     }
 
     public long getProfit(){
@@ -79,6 +86,10 @@ public class AgentState {
 
     public int getWonTasks(){
         return wonTasks;
+    }
+
+    public void setLowestBid(long bid) {
+        lowestBid = bid;
     }
 
     public void updateCandidate(Task task, Long bid){
