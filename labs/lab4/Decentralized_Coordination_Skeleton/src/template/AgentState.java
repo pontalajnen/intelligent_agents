@@ -24,6 +24,7 @@ public class AgentState {
     private long lowestBid;
 
 
+
     public AgentState(List<Vehicle> vehicleList, long timeout) {
         this.wonTasks = 0;
         this.candidate = new Candidate(vehicleList);
