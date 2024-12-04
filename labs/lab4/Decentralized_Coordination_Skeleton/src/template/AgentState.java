@@ -3,12 +3,15 @@ package template;
 import logist.agent.Agent;
 import logist.plan.Plan;
 import logist.simulation.Vehicle;
+import logist.simulation.VehicleImpl;
 import logist.task.DefaultTaskDistribution;
 import logist.task.Task;
 import logist.task.TaskDistribution;
+import logist.topology.Topology;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class AgentState {
     private int wonTasks;
@@ -25,10 +28,30 @@ public class AgentState {
 
 
 
-    public AgentState(List<Vehicle> vehicleList, long timeout) {
+    public AgentState(
+            List<Vehicle> vehicleList,
+            long timeout,
+            boolean randomizeVehicles,
+            List<Topology.City> cities) {
+        var random = new Random();
+        var randomizedVehicles = new ArrayList<Vehicle>();
+        if (randomizeVehicles){
+            for(var vehicle: vehicleList){
+                var randomVehicle = new VehicleImpl(
+                        vehicle.id(),
+                        vehicle.name(),
+                        vehicle.capacity(),
+                        vehicle.costPerKm(),
+                        cities.get(random.nextInt(cities.size())),
+                        (long)vehicle.speed(),
+                        vehicle.color()
+                );
+                randomizedVehicles.add(randomVehicle.getInfo());
+            }
+        }
         this.wonTasks = 0;
-        this.candidate = new Candidate(vehicleList);
-        this.planHelper = new PlanHelper(vehicleList, timeout);
+        this.candidate = new Candidate(randomizeVehicles ? randomizedVehicles : vehicleList);
+        this.planHelper = new PlanHelper(randomizeVehicles ? randomizedVehicles : vehicleList, timeout);
         this.totalBid = 0L;
         this.lowestBid = 0;
     }
