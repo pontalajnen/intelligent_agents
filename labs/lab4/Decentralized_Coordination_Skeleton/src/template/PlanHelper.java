@@ -26,6 +26,9 @@ public class PlanHelper {
         this.p = 0.1;
     }
 
+    public long getTimeout() {
+        return timeout;
+    }
 
     public boolean canCarryTask(Task task){
         for(var vehicle: vehicles){

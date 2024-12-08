@@ -15,6 +15,8 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 import logist.LogistSettings;
 import java.io.File;
+import java.util.stream.Collectors;
+
 import logist.config.Parsers;
 
 @SuppressWarnings("unused")
@@ -28,19 +30,19 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	private AgentState ourAgent;
 	private AgentState theirAgent;
-	private Map<City, Long> deliveryCities;
-	private Map<City, Long> pickUpCities;
 
 	private double p;
 
 	private double futureDiscount = 0.1;
-	private double cityApproximation = 0.1;
+	private double correctionFactor = 0.07;
 
 	private int highestCapacity;
-	private int correctGuesses = 0;
-	private int wrongGuesses = 0;
-	private long cumulativeLoss = 0;
-	private long cumulativeGain = 0;
+
+	private int totalTasksAuctioned = 0;
+
+	private HashMap<City, Double> correction;
+
+	private double aggro = 1;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
@@ -50,19 +52,12 @@ public class AuctionTemplate implements AuctionBehavior {
 		this.taskDistribution = (DefaultTaskDistribution) distribution;
 		this.agent = agent;
 		this.vehicles = agent.vehicles();
-		this.deliveryCities = new HashMap<>();
-		this.pickUpCities = new HashMap<>();
 
 		// Save time by calculating it here, maybe not much but
 		for(var vehicle : vehicles){
 			this.highestCapacity = Math.max(vehicle.capacity(), highestCapacity);
 		}
 
-		// Initiates a map with all the cities
-		for (City city : topology.cities()) {
-			this.deliveryCities.put(city, (long) 0);
-			this.pickUpCities.put(city, (long) 0);
-		}
 
 		// this code is used to get the timeouts
 		LogistSettings ls = null;
@@ -90,14 +85,16 @@ public class AuctionTemplate implements AuctionBehavior {
 		System.out.println("Printing agents");
 		System.out.println("Our agent: " + ourAgent.toString());
 		System.out.println("Their agent: " + theirAgent.toString());
+
+		correction = new HashMap<City, Double>(topology.cities().stream().map(c -> Map.entry(c, 0.0)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 	}
 
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
-		// We won the auction
+		System.out.println("\n------- OUR AGENT AUCTION RESULT -------");
+		totalTasksAuctioned++;
 
-		// Find opponent bid
 		long opponentBid = 0;
 		long ourBid = 0;
 		for (int i = 0; i < bids.length; i++) {
@@ -106,37 +103,29 @@ public class AuctionTemplate implements AuctionBehavior {
 			}
 		}
 
-		// Maybe it should be pickup, or a combination of them both
-		long bidDifference = opponentBid - theirAgent.getLowestBid();
+		double lowestDiff = Double.MAX_VALUE;
+		City bestCity = null;
 
-		boolean overEstimate = bidDifference < 0;
-		long correction = deliveryCities.get(previous.deliveryCity) + pickUpCities.get(previous.pickupCity);
-		// Could be zero in some edge cases but realistically won't happen
-		boolean deliveryPredict = deliveryCities.get(previous.deliveryCity) != 0;
-		boolean pickUpPredict = pickUpCities.get(previous.pickupCity) != 0;
-		boolean rightCorrection = correction < 0;
-		if (pickUpPredict || deliveryPredict) {
-			if (overEstimate == rightCorrection) {
-				correctGuesses++;
-				cumulativeGain += Math.abs(correction);
-				System.out.println("Correctly predicted: " + bidDifference);
-				System.out.println("Correct guesses: " + correctGuesses);
-				System.out.println("Cumulative gain: " + cumulativeGain);
-			} else {
-				wrongGuesses++;
-				cumulativeLoss += Math.abs(correction);
-				System.out.println("Wrongly predicted: " + bidDifference);
-				System.out.println("Wrong guesses: " + wrongGuesses);
-				System.out.println("Cumulative loss: " + cumulativeLoss);
+
+		if(totalTasksAuctioned == 1 && topology.cities().size() > 3){
+			for(var city : topology.cities()){
+				if (!ourAgent.getVehicles().stream().map(v -> v.getCurrentCity()).collect(Collectors.toList()).contains(city)){
+					double distanceFromNewCity = city.distanceTo(previous.pickupCity) * theirAgent.getVehicles().get(0).getVehicle().costPerKm();
+					double diff = Math.abs(opponentBid - distanceFromNewCity);
+					if(diff < lowestDiff){
+						lowestDiff = diff;
+						bestCity = city;
+					}
+				}
 			}
-		} else {
-			System.out.println("No data on opponent!");
+			System.out.println("New city for opponent: " + bestCity.name);
+			theirAgent.updateCurrentLocation(bestCity);
 		}
 
-		// Protect against adversarial bids, should maybe be lower
-		opponentBid = Math.min(opponentBid, 5000);
-		deliveryCities.put(previous.deliveryCity, bidDifference);
-		pickUpCities.put(previous.pickupCity, bidDifference);
+		if(opponentBid / theirAgent.getLowestBid() < 5){
+			double diff = opponentBid - theirAgent.getLowestBid();
+			correction.put(previous.pickupCity, diff);
+		}
 
 
 		if (winner == agent.id()){
@@ -151,16 +140,16 @@ public class AuctionTemplate implements AuctionBehavior {
 		System.out.println("Our profit: " + ourAgent.getProfit());
 		System.out.println("Their profit: " + theirAgent.getProfit());
 
+		System.out.println("---------------------------------------\n");
 	}
-
 
 	@Override
 	public Long askPrice(Task task) {
+		System.out.println("\n------- OUR AGENT ASK PRICE -------");
 		if (task.weight > highestCapacity) return Long.MAX_VALUE;
 
 		double ourMarginalCost = ourAgent.calculateMarginalCost(task, 0.25);
 		double theirMarginalCost = theirAgent.calculateMarginalCost(task, 0.25);
-		int totalTasksAuctioned = ourAgent.getWonTasks() + theirAgent.getWonTasks();
 
 		double ourFutureSavings = BidHelper.computeFutureSavings(
 				task, ourAgent, taskDistribution, 0.25
@@ -170,39 +159,34 @@ public class AuctionTemplate implements AuctionBehavior {
 		);
 
 		double ourLowestBid = ourMarginalCost + futureDiscount * ourFutureSavings;
-		double theirLowestBid = theirMarginalCost + futureDiscount * theirFutureSavings;
-		// Add up the supposed precictions from earlier deliveries
-		double learnedDiscount = (deliveryCities.get(task.deliveryCity) + pickUpCities.get(task.pickupCity));
-		double theirLowestBidTemp = theirLowestBid + cityApproximation * learnedDiscount;
-		theirLowestBid = theirLowestBidTemp;
+		double theirLowestBid = theirMarginalCost + futureDiscount * theirFutureSavings + 0 * correctionFactor * correction.get(task.pickupCity);
 
 		System.out.println("\nBidding round " + (totalTasksAuctioned + 1) + ":");
 		System.out.println("Our lowest bid: " + ourLowestBid);
 		System.out.println("Their lowest bid: " + theirLowestBid);
-		System.out.println(
-				"Their lowest bid with learning: " + theirLowestBidTemp
-		);
+
 		theirAgent.setLowestBid(Math.round(theirLowestBid));
 
+
+		double earlyGameBid = 0;
+		double lateGameBid = 0;
+
 		double bid;
+
 		if(ourLowestBid < theirLowestBid){
-			long eps = Math.round(((theirLowestBid - ourLowestBid) / 5) * 4);
+			long eps = Math.round((theirLowestBid - ourLowestBid) * 4 / 5);
 			bid = Math.max(0, Math.round(ourLowestBid) + eps);
 		}
-		else if(ourLowestBid > theirLowestBid){
-			if (ourAgent.getWonTasks() < 3){
-				bid = theirLowestBid*0.75;
-			}
-			else{
-				bid = ourLowestBid;
-			}
-		}
-		else{
-			bid = ourLowestBid;
+		else {
+			bid = theirLowestBid * 0.75 * aggro + ourLowestBid * (1 - aggro);
 		}
 		System.out.println("Our bid: " + bid);
 
-		return (long)Math.max(0, Math.max(ourMarginalCost * 0.85, Math.round(bid)));
+		aggro -= 0.1;
+		aggro = Math.max(aggro, 0);
+
+		System.out.println("---------------------------------------\n");
+		return Math.max(0, Math.round(Math.max(0.7 * ourMarginalCost, bid)));
 	}
 
 

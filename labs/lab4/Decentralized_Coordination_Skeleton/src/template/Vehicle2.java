@@ -19,4 +19,8 @@ public class Vehicle2 {
     public Vehicle getVehicle() {
         return vehicle;
     }
+
+    public void setCurrentCity(Topology.City city) {
+        this.currentCity = city;
+    }
 }

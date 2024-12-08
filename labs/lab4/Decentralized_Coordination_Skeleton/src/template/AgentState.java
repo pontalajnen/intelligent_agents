@@ -81,11 +81,23 @@ public class AgentState {
         this.lowestBid = agentState.getLowestBid();
     }
 
+    public List<Vehicle2> getVehicles(){
+        return candidate.vehicles;
+    }
+
+    public void updateCurrentLocation(Topology.City city){
+        var vehicles = candidate.vehicles;
+        vehicles.set(0, new Vehicle2(city, vehicles.get(0).getVehicle()));
+        candidate = new Candidate(vehicles);
+        planHelper = new PlanHelper(vehicles, planHelper.getTimeout());
+    }
+
     public long getLowestBid() {
         return lowestBid;
     }
 
     public long getProfit(){
+        candidate.updateCost();
         return getTotalBid() - Math.round(candidate.cost);
     }
 
@@ -170,10 +182,8 @@ public class AgentState {
 
     public List<Plan> getPlan(){
         if(currentEncodedCandidate == null){
-            System.out.println("No encoding exists");
             return planHelper.planFromSolution(candidate);
         }
-        System.out.println("Decoding candidate...");
         var finalCandidate = currentEncodedCandidate.getCandidate(candidate);
         System.out.println("Final cost: " + finalCandidate.cost);
         return planHelper.planFromSolution(finalCandidate);
