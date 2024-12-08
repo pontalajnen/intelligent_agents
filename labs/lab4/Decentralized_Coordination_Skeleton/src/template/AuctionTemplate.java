@@ -41,11 +41,10 @@ public class AuctionTemplate implements AuctionBehavior {
 	private int wrongGuesses = 0;
 	private long cumulativeLoss = 0;
 	private long cumulativeGain = 0;
-	private double risk = 1;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution,
-			Agent agent) {
+					  Agent agent) {
 
 		this.topology = topology;
 		this.taskDistribution = (DefaultTaskDistribution) distribution;
@@ -79,8 +78,18 @@ public class AuctionTemplate implements AuctionBehavior {
 		// the plan method cannot execute more than timeout_plan milliseconds
 		var timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN) - 200;	// We add a little safety margin
 
-		this.ourAgent = new AgentState(vehicles, timeout_plan, false, topology.cities());
-		this.theirAgent = new AgentState(vehicles, timeout_plan, true, topology.cities());
+		System.out.println("Adding our agent");
+		this.ourAgent = new AgentState(vehicles, timeout_plan, false, topology.cities(), new HashSet<>());
+		var occupiedCities = new HashSet<City>();
+		for (var vehicle : vehicles) {
+			occupiedCities.add(vehicle.homeCity());
+		}
+		System.out.println("Adding their agent");
+		this.theirAgent = new AgentState(vehicles, timeout_plan, true, topology.cities(), occupiedCities);
+
+		System.out.println("Printing agents");
+		System.out.println("Our agent: " + ourAgent.toString());
+		System.out.println("Their agent: " + theirAgent.toString());
 	}
 
 
@@ -96,7 +105,6 @@ public class AuctionTemplate implements AuctionBehavior {
 				opponentBid = bids[i];
 			}
 		}
-		System.out.println("-------Result information------");
 
 		// Maybe it should be pickup, or a combination of them both
 		long bidDifference = opponentBid - theirAgent.getLowestBid();
@@ -126,15 +134,15 @@ public class AuctionTemplate implements AuctionBehavior {
 		}
 
 		// Protect against adversarial bids, should maybe be lower
-		opponentBid = Math.min(opponentBid, 2000);
+		opponentBid = Math.min(opponentBid, 5000);
 		deliveryCities.put(previous.deliveryCity, bidDifference);
 		pickUpCities.put(previous.pickupCity, bidDifference);
 
 
 		if (winner == agent.id()){
-			 ourAgent.updateCandidate(previous, bids[agent.id()]);
-			 System.out.println("Won the auction, Opponent bid " + opponentBid);
-			 System.out.println("Current cost: " + ourAgent.getCost());
+			ourAgent.updateCandidate(previous, bids[agent.id()]);
+			System.out.println("Won the auction, Opponent bid " + opponentBid);
+			System.out.println("Current cost: " + ourAgent.getCost());
 		}
 		else {
 			theirAgent.updateCandidate(previous, bids[agent.id()]);
@@ -142,11 +150,10 @@ public class AuctionTemplate implements AuctionBehavior {
 		}
 		System.out.println("Our profit: " + ourAgent.getProfit());
 		System.out.println("Their profit: " + theirAgent.getProfit());
-		System.out.println("---------------------------------");
 
 	}
 
-	
+
 	@Override
 	public Long askPrice(Task task) {
 		if (task.weight > highestCapacity) return Long.MAX_VALUE;
@@ -162,14 +169,13 @@ public class AuctionTemplate implements AuctionBehavior {
 				task, theirAgent, taskDistribution, 0.25
 		);
 
-		double ourLowestBid = ourMarginalCost + (1 / (1 + ourAgent.getWonTasks())) * 0.2 * ourFutureSavings;
-		double theirLowestBid = theirMarginalCost + (1 / (1 + theirAgent.getWonTasks())) * 0.2 * theirFutureSavings;
+		double ourLowestBid = ourMarginalCost + futureDiscount * ourFutureSavings;
+		double theirLowestBid = theirMarginalCost + futureDiscount * theirFutureSavings;
 		// Add up the supposed precictions from earlier deliveries
 		double learnedDiscount = (deliveryCities.get(task.deliveryCity) + pickUpCities.get(task.pickupCity));
 		double theirLowestBidTemp = theirLowestBid + cityApproximation * learnedDiscount;
 		theirLowestBid = theirLowestBidTemp;
 
-		System.out.println("------Our askprice calc-----");
 		System.out.println("\nBidding round " + (totalTasksAuctioned + 1) + ":");
 		System.out.println("Our lowest bid: " + ourLowestBid);
 		System.out.println("Their lowest bid: " + theirLowestBid);
@@ -178,127 +184,25 @@ public class AuctionTemplate implements AuctionBehavior {
 		);
 		theirAgent.setLowestBid(Math.round(theirLowestBid));
 
-		long profitDifference = ourAgent.getProfit() - theirAgent.getProfit();
-		boolean ahead = profitDifference > 0;
-		boolean moreTasksWon = ourAgent.getWonTasks() > theirAgent.getWonTasks();
-		boolean closeGame = ourAgent.getProfit() / ourAgent.getProfit() > 0.9 || ourAgent.getProfit() / theirAgent.getProfit() < 1.1;
-
-		double earlyBid;
-		double lateBid;
-
-		double delta = 1 / (totalTasksAuctioned + 1);
-
-		// Early game strategy
-		if (totalTasksAuctioned == 0) {
-			earlyBid = 0.8 * ourLowestBid;
-			lateBid = 0.0;
+		double bid;
+		if(ourLowestBid < theirLowestBid){
+			long eps = Math.round(((theirLowestBid - ourLowestBid) / 5) * 4);
+			bid = Math.max(0, Math.round(ourLowestBid) + eps);
 		}
-		else {
-			if (ourLowestBid < theirLowestBid){
-				earlyBid = ourLowestBid + (theirLowestBid - ourLowestBid) * 1 / 4;
-				if (ourAgent.getWonTasks() / totalTasksAuctioned > 0.7){
-					lateBid = ourMarginalCost + (theirMarginalCost - ourMarginalCost) * 4 / 5;
-				}
-				else{
-					lateBid = ourMarginalCost + (theirMarginalCost - ourMarginalCost) * 2 / 5;
-				}
+		else if(ourLowestBid > theirLowestBid){
+			if (ourAgent.getWonTasks() < 3){
+				bid = theirLowestBid*0.75;
 			}
 			else{
-				earlyBid = ourLowestBid;
-				lateBid = ((1 + ourAgent.getWonTasks()) / (1 + totalTasksAuctioned)) * ourMarginalCost;
+				bid = ourLowestBid;
 			}
 		}
-		// if (ahead){
-		// 	if (earlyGame){
-		// 		System.out.println("MOOD: Agent is feeling optimistic");
-		// 		if (ourLowestBid > theirLowestBid){
-		// 			bid = 0.7 * Math.max(0.8 * ourLowestBid, 0.75 * theirLowestBid);
-		// 		}
-		// 		else {
-		// 			bid = ourLowestBid;
-		// 		}
-		// 	}
-		// 	else{
-		// 		System.out.println("MOOD: Agent is feeling ecstatic!");
-		// 		// Goal: Keep the lead and low risk appetite
-		// 		if (ourLowestBid > theirLowestBid){
-		// 			bid = Math.max(ourLowestBid - profitDifference * 0.1, 1/margin * ourLowestBid);
-		// 		}
-		// 		else {
-		// 			bid = ourLowestBid + (theirLowestBid - ourLowestBid) * 1 / 2;
-		// 		}
-		// 	}
-
-		// }
-		// else {
-		// 	if (earlyGame){
-		// 		System.out.println("MOOD: Agent is locking in!");
-		// 		if (ourLowestBid > theirLowestBid){
-		// 			if (moreTasksWon){
-		// 				bid = ourLowestBid;
-		// 			}
-		// 			else{
-
-		// 			}
-		// 			bid = 0.5 * Math.max(0.8 * ourLowestBid, 0.75 * theirLowestBid);
-		// 		}
-		// 		else {
-		// 			bid = 0.7 * Math.max(0.8 * ourLowestBid, 0.75 * theirLowestBid);
-		// 		}
-		// 	}
-		// 	else{
-		// 		System.out.println("MOOD: Agent is depressed!");
-		// 		if (ourLowestBid > theirLowestBid){
-		// 			if (margin > 0.9){
-		// 				bid = ourLowestBid;
-		// 			}
-		// 			else {
-		// 				bid = ourLowestBid * 1.1;
-		// 			}
-		// 		}
-		// 		else {
-		// 			if (margin > 0.9){
-		// 				bid = ourLowestBid + (theirLowestBid - ourLowestBid) * 4 / 6;
-		// 			}
-		// 			else{
-		// 				bid = ourLowestBid + (theirLowestBid - ourLowestBid) * 5 / 6;
-		// 			}
-
-		// 		}
-		// 	}
-		// }
-
-//		double bid = Math.max(0, Math.max(0.8 * ourMarginalCost, 0.75 * theirMarginalCost));
-//		if (ourAgent.getWonTasks() < 4) {
-//			bid *= 0.5;
-//		}
-//		if(ourLowestBid < theirLowestBid){
-//			long eps = Math.round(((theirLowestBid - ourLowestBid) / 6) * 5);
-//			bid = Math.max(0, Math.round(ourLowestBid) + eps);
-//		}
-//		else if(ourLowestBid > theirLowestBid){
-//			if (ourAgent.getWonTasks() < 3){
-//				bid = Math.max(0, 0.80 * theirLowestBid);
-//			}
-//			else{
-//				if (profitDifference > 0) {
-//					bid = Math.max(0, 0.95 * theirLowestBid);
-//
-//				} else {
-//					bid = Math.max(0, 0.80 * theirLowestBid);
-//
-//				}
-//			}
-//		}
-//		else{
-//			bid = ourLowestBid - 100;
-//		}
-
-		double bid = delta * earlyBid + (1 - delta) * lateBid;
+		else{
+			bid = ourLowestBid;
+		}
 		System.out.println("Our bid: " + bid);
-		System.out.println("----------------------------");
 
-		return (long) Math.max(0, bid);
+		return (long)Math.max(0, Math.max(ourMarginalCost * 0.85, Math.round(bid)));
 	}
 
 

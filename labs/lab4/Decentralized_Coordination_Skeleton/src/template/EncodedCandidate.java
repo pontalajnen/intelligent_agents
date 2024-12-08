@@ -6,7 +6,7 @@ import logist.task.Task;
 import java.util.*;
 
 public class EncodedCandidate {
-    private List<Vehicle> vehicles;
+    private List<Vehicle2> vehicles;
     private List<List<EncodedAction>> plans;
     private List<List<Integer>> taskLists;
     private Double cost;
@@ -51,7 +51,7 @@ public class EncodedCandidate {
         this.cost = candidate.cost;
     }
 
-    public List<Vehicle> getVehicles() {
+    public List<Vehicle2> getVehicles() {
         return vehicles;
     }
 

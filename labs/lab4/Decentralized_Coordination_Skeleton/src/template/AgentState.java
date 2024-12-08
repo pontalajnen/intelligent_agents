@@ -10,8 +10,10 @@ import logist.task.TaskDistribution;
 import logist.topology.Topology;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class AgentState {
     private int wonTasks;
@@ -32,26 +34,37 @@ public class AgentState {
             List<Vehicle> vehicleList,
             long timeout,
             boolean randomizeVehicles,
-            List<Topology.City> cities) {
+            List<Topology.City> cities,
+            HashSet<Topology.City> occupiedCities) {
         var random = new Random();
-        var randomizedVehicles = new ArrayList<Vehicle>();
+        var randomizedVehicles = new ArrayList<Vehicle2>();
+        if (cities.size() < 4){
+            randomizeVehicles = false;
+        }
+
         if (randomizeVehicles){
             for(var vehicle: vehicleList){
-                var randomVehicle = new VehicleImpl(
-                        vehicle.id(),
-                        vehicle.name(),
-                        vehicle.capacity(),
-                        vehicle.costPerKm(),
-                        cities.get(random.nextInt(cities.size())),
-                        (long)vehicle.speed(),
-                        vehicle.color()
+                var city = cities.get(random.nextInt(cities.size()));
+                while (occupiedCities.contains(city)){
+                    city = cities.get(random.nextInt(cities.size()));
+                }
+                var newVehicle = new Vehicle2(
+                        city,
+                        vehicle
                 );
-                randomizedVehicles.add(randomVehicle.getInfo());
+                randomizedVehicles.add(newVehicle);
+                occupiedCities.add(city);
             }
         }
+        var vehicleList2 = new ArrayList<Vehicle2>();
+        for(int i = 0; i < vehicleList.size(); ++i){
+            vehicleList2.add(
+                    new Vehicle2(vehicleList.get(i).homeCity(), vehicleList.get(i))
+            );
+        }
         this.wonTasks = 0;
-        this.candidate = new Candidate(randomizeVehicles ? randomizedVehicles : vehicleList);
-        this.planHelper = new PlanHelper(randomizeVehicles ? randomizedVehicles : vehicleList, timeout);
+        this.candidate = new Candidate(randomizeVehicles ? randomizedVehicles : vehicleList2);
+        this.planHelper = new PlanHelper(randomizeVehicles ? randomizedVehicles : vehicleList2, timeout);
         this.totalBid = 0L;
         this.lowestBid = 0;
     }
@@ -164,6 +177,11 @@ public class AgentState {
         var finalCandidate = currentEncodedCandidate.getCandidate(candidate);
         System.out.println("Final cost: " + finalCandidate.cost);
         return planHelper.planFromSolution(finalCandidate);
+    }
+
+    @Override
+    public String toString(){
+        return "Cities " + candidate.vehicles.stream().map(v -> v.getCurrentCity().name).collect(Collectors.joining(", "));
     }
 
 

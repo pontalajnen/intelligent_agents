@@ -11,18 +11,18 @@ import logist.topology.Topology.City;
 public class Candidate {
 
 	public Double cost; // cost of the plan
-	public List<Vehicle> vehicles; // list of vehicles
+	public List<Vehicle2> vehicles; // list of vehicles
 	public List<List<PD_Action>> plans; // lists of plans for each vehicle
 	public List<List<Task>> taskLists; // lists of tasks for each vehicle
 
-	public Candidate(List<Vehicle> vehicles, List<List<PD_Action>> plans, List<List<Task>> taskLists, Double cost) {
+	public Candidate(List<Vehicle2> vehicles, List<List<PD_Action>> plans, List<List<Task>> taskLists, Double cost) {
 		this.vehicles = vehicles;
 		this.plans = plans;
 		this.taskLists = taskLists;
 		this.cost = cost;
 	}
 
-	public Candidate(List<Vehicle> vehicles) {
+	public Candidate(List<Vehicle2> vehicles) {
 		// Initialise plans and tasks variables
 		List<List<PD_Action>> plans = new ArrayList<>();
 		List<List<Task>> taskLists = new ArrayList<>();
@@ -70,7 +70,7 @@ public class Candidate {
 			int task_id = 0;
 			double task_weight = vehicle_tasks.get(task_id).weight; // Get task weight
 			int vid_j = random.nextInt(num_vehicles);
-			while (vid_i == vid_j || vehicles.get(vid_j).capacity() < task_weight) {
+			while (vid_i == vid_j || vehicles.get(vid_j).getVehicle().capacity() < task_weight) {
 				vid_j = random.nextInt(num_vehicles);
 			}
 
@@ -92,7 +92,7 @@ public class Candidate {
 	}
 
 	// Create initial candidate solution: All tasks assigned to the largest vehicle
-	public static Candidate SelectInitialSolution(Random random, List<Vehicle> vehicles, List<Task> tasks) {
+	public static Candidate SelectInitialSolution(Random random, List<Vehicle2> vehicles, List<Task> tasks) {
 		int num_vehicles = vehicles.size();
 		List<List<PD_Action>> plans = new ArrayList<>();
 		List<List<Task>> taskLists = new ArrayList<>();
@@ -151,15 +151,15 @@ public class Candidate {
 	}
 
 	// Function to compute the cost of individual vehicles
-	private static double ComputeCost(Vehicle v, List<PD_Action> plan) {
+	private static double ComputeCost(Vehicle2 v, List<PD_Action> plan) {
 		double cost = 0.0;
 		City current_city = v.getCurrentCity();
 		for (PD_Action act : plan) {
 			if (act.is_pickup) {
-				cost += Measures.unitsToKM(current_city.distanceUnitsTo(act.task.pickupCity)) * v.costPerKm();
+				cost += Measures.unitsToKM(current_city.distanceUnitsTo(act.task.pickupCity)) * v.getVehicle().costPerKm();
 				current_city = act.task.pickupCity;
 			} else {
-				cost += Measures.unitsToKM(current_city.distanceUnitsTo(act.task.deliveryCity)) * v.costPerKm();
+				cost += Measures.unitsToKM(current_city.distanceUnitsTo(act.task.deliveryCity)) * v.getVehicle().costPerKm();
 				current_city = act.task.deliveryCity;
 			}
 		}
@@ -170,8 +170,8 @@ public class Candidate {
 
 	// Function to change the vehicle of a given task
 	public Candidate ChangingVehicle(Random random, int task_id, int vid_i, int vid_j) {
-		Vehicle v_i = vehicles.get(vid_i);
-		Vehicle v_j = vehicles.get(vid_j);
+		Vehicle2 v_i = vehicles.get(vid_i);
+		Vehicle2 v_j = vehicles.get(vid_j);
 
 		List<Task> i_tasks_old = taskLists.get(vid_i);
 		List<Task> j_tasks_old = taskLists.get(vid_j);
@@ -219,7 +219,7 @@ public class Candidate {
 
 	// Randomly change the place of pickup and delivery actions of one of the tasks in a given vehicle, considering the constraints
 	public Candidate ChangingTaskOrder(Random random, int task_id, int vid_i) {
-		Vehicle v_i = vehicles.get(vid_i);
+		Vehicle2 v_i = vehicles.get(vid_i);
 		List<Task> vehicle_tasks = taskLists.get(vid_i);
 		Task t = vehicle_tasks.get(task_id);
 
@@ -234,7 +234,7 @@ public class Candidate {
 			}
 		}
 
-		int vehicle_capacity = v_i.capacity();
+		int vehicle_capacity = v_i.getVehicle().capacity();
 		int pickup_location = 0;
 		List<PD_Action> candidate_plan_pickup = new ArrayList<>(i_plan_new);
 		boolean done = false;

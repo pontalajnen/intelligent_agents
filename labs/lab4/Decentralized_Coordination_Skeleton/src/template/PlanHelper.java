@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.Random;
 
 public class PlanHelper {
-    private List<Vehicle> vehicles;
+    private List<Vehicle2> vehicles;
     private Random random;
     private long timeout;
     private double p;
 
-    public PlanHelper(List<Vehicle> vehicles, long timeout){
+    public PlanHelper(List<Vehicle2> vehicles, long timeout){
         this.vehicles = vehicles;
 
         long seed = -9019554669489983951L;
@@ -29,7 +29,7 @@ public class PlanHelper {
 
     public boolean canCarryTask(Task task){
         for(var vehicle: vehicles){
-            if (vehicle.capacity() >= task.weight){
+            if (vehicle.getVehicle().capacity() >= task.weight){
                 return true;
             }
         }
@@ -88,7 +88,7 @@ public class PlanHelper {
 
         for (int vehicleIndex = 0; vehicleIndex < candidate.vehicles.size(); vehicleIndex++) {
 
-            Vehicle vehicle = candidate.vehicles.get(vehicleIndex);
+            Vehicle2 vehicle = candidate.vehicles.get(vehicleIndex);
 
             List<PD_Action> plan = candidate.plans.get(vehicleIndex);
 
